@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, Item, Zombie, ZombieType, Building, Crop, FoliageNode, FishNode, NPC, Quest, Position, ItemType, Rarity, BuildingType, CropType, Weather, SkillType, Animal, DamagePopup } from '../types/game';
+import { GameState, Item, Zombie, ZombieType, Building, Crop, FoliageNode, FishNode, NPC, Quest, Position, ItemType, Rarity, BuildingType, CropType, Weather, Season, SkillType, Animal, DamagePopup, RideableCar, RideableShip } from '../types/game';
 import { GameAudio } from '../lib/audio';
 import { getTerrainHeight } from '../game/world/WorldTerrain';
 
@@ -66,6 +66,9 @@ export const ITEM_PRESETS: Record<string, Omit<Item, 'id' | 'count'>> = {
   light_item: { name: 'Electric Light', type: 'furniture', description: 'Illuminates house. Requires electrical power.', rarity: 'common', maxStack: 10, icon: '💡', buildingType: 'light' },
   water_pump_item: { name: 'Irrigation Pump', type: 'furniture', description: 'Requires power. Waters crops within 5 tiles.', rarity: 'rare', maxStack: 2, icon: '🚰', buildingType: 'water_pump' },
   turret_item: { name: 'Defense Turret', type: 'furniture', description: 'Requires power. Automatically shoots nearby zombies.', rarity: 'legendary', maxStack: 1, icon: '🛡️', buildingType: 'turret' },
+  raw_fish: { name: 'Raw Fish', type: 'fish', description: 'Freshly caught fish. Sell at the market or cook it.', rarity: 'common', maxStack: 20, icon: '🐡', sellPrice: 8 },
+  deer_meat: { name: 'Deer Meat', type: 'food', description: 'Fresh venison from a hunted deer. Sellable at market.', rarity: 'common', maxStack: 10, icon: '🥩', hungerRestore: 20, sellPrice: 12 },
+  rabbit_meat: { name: 'Rabbit Meat', type: 'food', description: 'Small game meat from a rabbit. Sellable at market.', rarity: 'common', maxStack: 15, icon: '🍗', hungerRestore: 10, sellPrice: 8 },
 };
 
 // Initial Quests Preset
@@ -134,12 +137,50 @@ const generateInitialFoliage = (): FoliageNode[] => {
     if (Math.hypot(rx, rz) < 6) continue;
     if (Math.hypot(rx - 12, rz - (-10)) < 9) continue;
     if (Math.hypot(rx - 5, rz - 8) < 11) continue;
+    if (rx < -7.5 && rz < -10.5) continue;
 
     const ry = getTerrainHeight(rx, rz);
     if (ry > -1.0) {
       nodes.push({
         id: `t_${i}`,
         type: 'tree',
+        position: [rx, ry, rz],
+        scale: 0.85 + random() * 0.45,
+        rotation: random() * Math.PI * 2,
+      });
+    }
+  }
+
+  // Generate sakura trees (cherry blossoms)
+  for (let i = 0; i < 35; i++) {
+    // some around Mount Fuji, some around village
+    const aroundFuji = random() > 0.5;
+    let rx = 0;
+    let rz = 0;
+    if (aroundFuji) {
+      // North-East Fuji area
+      rx = 22 + random() * 20;
+      rz = -40 + random() * 20;
+    } else {
+      // Near village
+      const angle = random() * Math.PI * 2;
+      const dist = 11.5 + random() * 8.0;
+      rx = 5 + Math.cos(angle) * dist;
+      rz = 8 + Math.sin(angle) * dist;
+    }
+
+    // Skip lake
+    const lakeDist = Math.hypot(rx - (-18), rz - 8);
+    if (lakeDist < 16.5) continue;
+    // Skip player spawn, power plant
+    if (Math.hypot(rx, rz) < 6) continue;
+    if (Math.hypot(rx - 12, rz - (-10)) < 9) continue;
+
+    const ry = getTerrainHeight(rx, rz);
+    if (ry > -1.0) {
+      nodes.push({
+        id: `s_t_${i}`,
+        type: 'sakura_tree',
         position: [rx, ry, rz],
         scale: 0.85 + random() * 0.45,
         rotation: random() * Math.PI * 2,
@@ -170,6 +211,7 @@ const generateInitialFoliage = (): FoliageNode[] => {
     const lakeDist = Math.hypot(rx - (-18), rz - 8);
     if (lakeDist < 16.5) continue;
     if (Math.hypot(rx, rz) < 6) continue;
+    if (rx < -7.5 && rz < -10.5) continue;
     const ry = getTerrainHeight(rx, rz);
     if (ry > -0.8 && ry < 4.0) {
       nodes.push({
@@ -189,6 +231,7 @@ const generateInitialFoliage = (): FoliageNode[] => {
     const lakeDist = Math.hypot(rx - (-18), rz - 8);
     if (lakeDist < 16.5) continue;
     if (Math.hypot(rx, rz) < 6) continue;
+    if (rx < -7.5 && rz < -10.5) continue;
     const ry = getTerrainHeight(rx, rz);
     if (ry > -0.8 && ry < 3.0) {
       nodes.push({
@@ -208,6 +251,7 @@ const generateInitialFoliage = (): FoliageNode[] => {
     const lakeDist = Math.hypot(rx - (-18), rz - 8);
     if (lakeDist < 16.5) continue;
     if (Math.hypot(rx, rz) < 6) continue;
+    if (rx < -7.5 && rz < -10.5) continue;
     const ry = getTerrainHeight(rx, rz);
     if (ry > -0.8 && ry < 3.0) {
       nodes.push({
@@ -237,6 +281,24 @@ const generateInitialFish = (): FishNode[] => {
       position: [fx, -1.3, fz],
       targetAngle: angle + Math.PI / 2, // Swim perpendicular
       speed: 0.6 + Math.random() * 0.8,
+      color: fishColors[i % fishColors.length],
+    });
+  }
+  return list;
+};
+
+// Spawn swimming fish in the ocean (NW quadrant)
+const generateInitialOceanFish = (): FishNode[] => {
+  const list: FishNode[] = [];
+  const fishColors = ['#0ea5e9', '#38bdf8', '#fb7185', '#22d3ee', '#fbbf24']; // Tropical colors
+  for (let i = 0; i < 15; i++) {
+    const fx = -20 - Math.random() * 25;
+    const fz = -20 - Math.random() * 25;
+    list.push({
+      id: `ocean_fish_${i}`,
+      position: [fx, -1.8, fz],
+      targetAngle: Math.random() * Math.PI * 2,
+      speed: 0.8 + Math.random() * 1.2,
       color: fishColors[i % fishColors.length],
     });
   }
@@ -332,7 +394,7 @@ const createInitialState = () => {
     activeTab: 'menu' as const,
     selectedNpcId: null,
 
-    playerPos: [0, 0.5, 0] as Position,
+    playerPos: [5.0, 0.5, 8.0] as Position,
     playerRot: 0,
     playerStats: {
       health: 100,
@@ -361,6 +423,21 @@ const createInitialState = () => {
     worldTime: 8.0,
     weather: 'sunny' as Weather,
     weatherTimer: 2000,
+    season: 'summer' as Season,
+    seasonTimer: 9000,
+
+    cars: [
+      { id: 'car_1', position: [2.0, 0.35, 1.5], rotation: 0, color: '#b91c1c', speed: 12 },
+      { id: 'car_2', position: [12.0, 0.35, 2.0], rotation: Math.PI / 2, color: '#1d4ed8', speed: 14 },
+      { id: 'car_3', position: [15.0, 0.35, -6.0], rotation: Math.PI, color: '#15803d', speed: 11 },
+      { id: 'car_4', position: [-5.0, 0.35, 6.0], rotation: -Math.PI / 2, color: '#eab308', speed: 13 },
+    ] as RideableCar[],
+    mountedCarId: null,
+
+    ships: [
+      { id: 'ship_1', position: [-23.0, -1.2, -20.0], rotation: Math.PI / 2, speed: 9.0 }
+    ] as RideableShip[],
+    mountedShipId: null as string | null,
 
     isBuildingMode: false,
     selectedBuildingType: null,
@@ -370,6 +447,7 @@ const createInitialState = () => {
     crops: [] as Crop[],
     foliage: generateInitialFoliage(),
     lakeFish: generateInitialFish(),
+    oceanFish: generateInitialOceanFish(),
     bulletTrails: [] as Array<{ id: string; start: Position; end: Position }>,
     animals: [] as Animal[],
     damagePopups: [] as DamagePopup[],
@@ -451,8 +529,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     for (let i = 0; i < 4; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = 22 + Math.random() * 14;
-      const x = Math.sin(angle) * radius;
-      const z = Math.cos(angle) * radius;
+      let x = Math.sin(angle) * radius;
+      let z = Math.cos(angle) * radius;
+      if (x < -12 && z < -12) {
+        x = Math.max(-12, x);
+        z = Math.max(-12, z);
+      }
       initialZombies.push({
         id: uuid(),
         type: types[i % 2],
@@ -466,14 +548,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     state.zombies = initialZombies;
 
-    // Spawn initial forest animals (Deer, Rabbit, Wolf)
+    // Spawn initial forest animals (Deer, Rabbit, Wolf) in mountains
     const initialAnimals: Animal[] = [];
     // Spawn 3 deers
     for (let i = 0; i < 3; i++) {
+      const ax = 20 + Math.random() * 25;
+      const az = 15 + Math.random() * 25;
+      const ay = getTerrainHeight(ax, az) + 0.4;
       initialAnimals.push({
         id: `deer_${uuid()}`,
         type: 'deer',
-        position: [-35 + Math.random() * 20, 0.4, -35 + Math.random() * 20],
+        position: [ax, ay, az],
         health: 50,
         maxHealth: 50,
         speed: 3.5,
@@ -484,10 +569,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Spawn 3 rabbits
     for (let i = 0; i < 3; i++) {
+      const ax = 20 + Math.random() * 25;
+      const az = 15 + Math.random() * 25;
+      const ay = getTerrainHeight(ax, az) + 0.15;
       initialAnimals.push({
         id: `rabbit_${uuid()}`,
         type: 'rabbit',
-        position: [-35 + Math.random() * 20, 0.15, -35 + Math.random() * 20],
+        position: [ax, ay, az],
         health: 15,
         maxHealth: 15,
         speed: 4.5,
@@ -498,10 +586,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Spawn 2 wolves
     for (let i = 0; i < 2; i++) {
+      const ax = 20 + Math.random() * 25;
+      const az = 15 + Math.random() * 25;
+      const ay = getTerrainHeight(ax, az) + 0.42;
       initialAnimals.push({
         id: `wolf_${uuid()}`,
         type: 'wolf',
-        position: [-35 + Math.random() * 20, 0.42, -35 + Math.random() * 20],
+        position: [ax, ay, az],
         health: 40,
         maxHealth: 40,
         speed: 2.8,
@@ -1103,12 +1194,26 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (targetAnimal.health - amount <= 0) {
       set({ animals: animals.filter((a) => a.id !== id) });
-      const meat = { ...ITEM_PRESETS.steak, count: targetAnimal.type === 'deer' ? 2 : 1 } as Item;
+      // Drop type-specific meat
+      let dropPreset = ITEM_PRESETS.steak;
+      let dropCount = 1;
+      if (targetAnimal.type === 'deer') {
+        dropPreset = ITEM_PRESETS.deer_meat;
+        dropCount = 2;
+      } else if (targetAnimal.type === 'rabbit') {
+        dropPreset = ITEM_PRESETS.rabbit_meat;
+        dropCount = 1;
+      } else {
+        dropPreset = ITEM_PRESETS.steak; // wolf drops generic meat
+        dropCount = 1;
+      }
+      const meat = { id: uuid(), ...dropPreset, count: dropCount } as Item;
       get().spawnLootDrop(meat, targetAnimal.position);
 
       get().addXp(targetAnimal.type === 'wolf' ? 30 : 15);
       get().addGold(targetAnimal.type === 'deer' ? 12 : 5);
       get().addSkillXp('survival', 15);
+      get().addDamagePopup('💀 Killed!', targetAnimal.position, '#f87171');
     } else {
       const updatedAnimals = animals.map((a) => {
         if (a.id === id) {
@@ -1150,8 +1255,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Spawn in circle outside player camera view (radius 20 to 30)
       const angle = Math.random() * Math.PI * 2;
       const radius = 22 + Math.random() * 8;
-      const x = playerPos[0] + Math.sin(angle) * radius;
-      const z = playerPos[2] + Math.cos(angle) * radius;
+      let x = playerPos[0] + Math.sin(angle) * radius;
+      let z = playerPos[2] + Math.cos(angle) * radius;
+      if (x < -12 && z < -12) {
+        x = Math.max(-12, x);
+        z = Math.max(-12, z);
+      }
 
       // Select type
       const rand = Math.random();
@@ -1510,26 +1619,28 @@ export const useGameStore = create<GameState>((set, get) => ({
       const newProgress = Math.max(0, Math.min(100, fishing.fishProgress + progressDelta));
 
       if (newProgress >= 100) {
-        // Caught a fish!
-        const fishes: Array<{ name: string; rarity: Rarity; item: keyof typeof ITEM_PRESETS }> = [
-          { name: 'Common Carp', rarity: 'common', item: 'grilled_fish' },
-          { name: 'Golden Bass', rarity: 'rare', item: 'grilled_fish' },
-          { name: 'Luminant Eel', rarity: 'epic', item: 'grilled_fish' },
-          { name: 'Kraken Minnow', rarity: 'legendary', item: 'grilled_fish' },
+        // Caught a fish! Give raw_fish item (can be sold or eaten)
+        const fishRarities: Array<{ name: string; rarity: Rarity; goldBonus: number }> = [
+          { name: 'Common Carp', rarity: 'common', goldBonus: 0 },
+          { name: 'Golden Bass', rarity: 'rare', goldBonus: 10 },
+          { name: 'Luminant Eel', rarity: 'epic', goldBonus: 25 },
+          { name: 'Kraken Minnow', rarity: 'legendary', goldBonus: 50 },
         ];
-        const fish = fishes[Math.floor(Math.random() * fishes.length)];
-        const fishItem = {
-          ...ITEM_PRESETS[fish.item],
-          name: fish.name,
-          rarity: fish.rarity,
+        const picked = fishRarities[Math.floor(Math.random() * fishRarities.length)];
+        const fishItem: Item = {
+          id: uuid(),
+          ...ITEM_PRESETS.raw_fish,
+          name: picked.name,
+          rarity: picked.rarity,
           count: 1,
-        } as Item;
+        };
 
         get().addItemToInventory(fishItem);
         get().addSkillXp('fishing', 35);
-        get().addGold(fish.rarity === 'legendary' ? 50 : 15);
+        get().addGold(8 + picked.goldBonus);
+        get().addDamagePopup(`🐟 Caught ${picked.name}!`, get().playerPos, '#34d399');
 
-        set({ fishing: { ...fishing, status: 'success', targetFish: fish.name, fishRarity: fish.rarity } });
+        set({ fishing: { ...fishing, status: 'success', targetFish: picked.name, fishRarity: picked.rarity } });
         setTimeout(() => set({ fishing: { ...fishing, status: 'idle' } }), 2000);
       } else if (newProgress <= 0 && fishing.fishProgress > 0) {
         // Lost!
@@ -1675,16 +1786,38 @@ export const useGameStore = create<GameState>((set, get) => ({
       GameAudio.setMood('day');
     }
 
-    // 2. Weather Cycle Updates
+    // 2. Season Cycle Updates
+    let newSeason = state.season;
+    let newSeasonTimer = state.seasonTimer - 1;
+    if (newSeasonTimer <= 0) {
+      newSeasonTimer = 8000 + Math.floor(Math.random() * 4000);
+      if (newSeason === 'summer') newSeason = 'rainy';
+      else if (newSeason === 'rainy') newSeason = 'winter';
+      else newSeason = 'summer';
+    }
+
+    // 2.5 Weather Cycle Updates (season-aware probabilities)
     let newWeather = state.weather;
     let newWeatherTimer = state.weatherTimer - 1;
     if (newWeatherTimer <= 0) {
       newWeatherTimer = 3000 + Math.floor(Math.random() * 5000);
       const rand = Math.random();
-      if (rand < 0.5) newWeather = 'sunny';
-      else if (rand < 0.75) newWeather = 'rain';
-      else if (rand < 0.9) newWeather = 'fog';
-      else newWeather = 'storm';
+      if (newSeason === 'summer') {
+        // Summer: mostly sunny, occasional fog/light rain
+        if (rand < 0.70) newWeather = 'sunny';
+        else if (rand < 0.85) newWeather = 'fog';
+        else newWeather = 'rain';
+      } else if (newSeason === 'rainy') {
+        // Rainy season: heavy rain, storms, fog
+        if (rand < 0.50) newWeather = 'rain';
+        else if (rand < 0.80) newWeather = 'storm';
+        else newWeather = 'fog';
+      } else {
+        // Winter: clear cold, snowy rain, fog
+        if (rand < 0.40) newWeather = 'sunny';
+        else if (rand < 0.75) newWeather = 'rain'; // shows as snow in WeatherSystem
+        else newWeather = 'fog';
+      }
     }
 
     // 3. Survival Depletion Rates (Only run if active)
@@ -1803,11 +1936,11 @@ export const useGameStore = create<GameState>((set, get) => ({
           let newTarget = animal.targetPos;
           let lastAtk = animal.lastAttackTime || 0;
 
-          // Forest boundaries
-          const minX = -45;
-          const maxX = -10;
-          const minZ = -45;
-          const maxZ = -10;
+          // Forest/Mountains boundaries on land
+          const minX = 15;
+          const maxX = 45;
+          const minZ = 12;
+          const maxZ = 45;
 
           if (animal.type === 'wolf') {
             // Predator behavior
@@ -2035,10 +2168,37 @@ export const useGameStore = create<GameState>((set, get) => ({
       };
     });
 
+    // Swimming ocean fish coordinate ticks
+    const updatedOceanFish = state.oceanFish.map((fish) => {
+      let [fx, fy, fz] = fish.position;
+      let angle = fish.targetAngle;
+
+      fx += Math.sin(angle) * fish.speed * delta;
+      fz += Math.cos(angle) * fish.speed * delta;
+
+      if (fx > -14 || fx < -52 || fz > -14 || fz < -52) {
+        angle = angle + Math.PI + (Math.random() - 0.5) * 1.0;
+        fx = Math.max(-51, Math.min(-15, fx));
+        fz = Math.max(-51, Math.min(-15, fz));
+      } else if (Math.random() < 0.02) {
+        angle += (Math.random() - 0.5) * 1.2;
+      }
+
+      fy = -1.8 + Math.sin(state.worldTime * 5.0 + fish.id.charCodeAt(11)) * 0.15;
+
+      return {
+        ...fish,
+        position: [fx, fy, fz] as Position,
+        targetAngle: angle,
+      };
+    });
+
     set({
       worldTime: newTime,
       weather: newWeather,
       weatherTimer: newWeatherTimer,
+      season: newSeason,
+      seasonTimer: newSeasonTimer,
       playerStats: stats,
       rollCooldown,
       attackCooldown,
@@ -2047,6 +2207,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       crops: updatedCrops,
       buildings: updatedBuildings,
       lakeFish: updatedFish,
+      oceanFish: updatedOceanFish,
       powerPlant: {
         ...state.powerPlant,
         fuel: ppFuel,
@@ -2059,4 +2220,74 @@ export const useGameStore = create<GameState>((set, get) => ({
       get().tickFishing(delta);
     }
   },
+
+  mountCar: (carId) => {
+    set({ mountedCarId: carId });
+  },
+
+  dismountCar: () => {
+    const state = get();
+    if (state.mountedCarId) {
+      const carId = state.mountedCarId;
+      const playerPos = state.playerPos;
+      const playerRot = state.playerRot;
+
+      // Dismount to the side of the car (perpendicular to car rotation)
+      const angle = playerRot + Math.PI / 2;
+      const disX = Math.max(-55, Math.min(55, playerPos[0] + Math.cos(angle) * 1.35));
+      const disZ = Math.max(-55, Math.min(55, playerPos[2] - Math.sin(angle) * 1.35));
+      const disY = getTerrainHeight(disX, disZ) + 0.35;
+
+      set({
+        mountedCarId: null,
+        playerPos: [disX, disY, disZ] as Position,
+        cars: state.cars.map((car) =>
+          car.id === carId
+            ? {
+                ...car,
+                position: [playerPos[0], playerPos[1] - 0.3, playerPos[2]] as Position,
+                rotation: playerRot,
+              }
+            : car
+        ),
+      });
+    } else {
+      set({ mountedCarId: null });
+    }
+  },
+
+  mountShip: (shipId) => {
+    set({ mountedShipId: shipId });
+  },
+
+  dismountShip: () => {
+    const state = get();
+    if (state.mountedShipId) {
+      const shipId = state.mountedShipId;
+      const playerPos = state.playerPos;
+      const playerRot = state.playerRot;
+
+      // Dismount safely to the pier end
+      const disX = -19.0;
+      const disZ = -20.0;
+      const disY = getTerrainHeight(disX, disZ) + 0.35;
+
+      set({
+        mountedShipId: null,
+        playerPos: [disX, disY, disZ] as Position,
+        ships: state.ships.map((ship) =>
+          ship.id === shipId
+            ? {
+                ...ship,
+                position: [playerPos[0], -1.2, playerPos[2]] as Position,
+                rotation: playerRot,
+              }
+            : ship
+        ),
+      });
+    } else {
+      set({ mountedShipId: null });
+    }
+  },
+
 }));

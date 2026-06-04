@@ -278,10 +278,12 @@ export default function GameCanvas() {
     <div className="w-full h-full bg-slate-950 absolute inset-0 select-none">
       <Canvas
         shadows
+        dpr={[1, 1.5]}
+        performance={{ min: 0.5 }}
         camera={{
           fov: 38,
           near: 0.1,
-          far: 220,
+          far: 150,
           position: [12.5, 15.0, 12.5],
         }}
       >

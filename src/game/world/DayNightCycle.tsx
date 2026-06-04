@@ -1,21 +1,79 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
+
+// Pre-allocated static colors for day/night/dawn/dusk transitions to avoid garbage collection pressure
+const COLOR_DAY_SKY = new THREE.Color('#38bdf8');
+const COLOR_DAY_AMBIENT = new THREE.Color('#e0f2fe');
+const COLOR_DAY_SUN = new THREE.Color('#fffbeb');
+
+const COLOR_DAWN_SKY_START = new THREE.Color('#0f172a');
+const COLOR_DAWN_SKY_END = new THREE.Color('#fdba74');
+const COLOR_DAWN_AMBIENT_START = new THREE.Color('#020617');
+const COLOR_DAWN_AMBIENT_END = new THREE.Color('#fed7aa');
+
+const COLOR_SUNSET_SKY_START = new THREE.Color('#38bdf8');
+const COLOR_SUNSET_SKY_END = new THREE.Color('#c084fc');
+const COLOR_SUNSET_AMBIENT_START = new THREE.Color('#f0f9ff');
+const COLOR_SUNSET_AMBIENT_END = new THREE.Color('#f472b6');
+const COLOR_SUNSET_SUN = new THREE.Color('#fb923c');
+
+const COLOR_DUSK_SKY_START = new THREE.Color('#c084fc');
+const COLOR_DUSK_SKY_END = new THREE.Color('#0f172a');
+const COLOR_DUSK_AMBIENT_START = new THREE.Color('#f472b6');
+const COLOR_DUSK_AMBIENT_END = new THREE.Color('#090d16');
+
+const COLOR_NIGHT_SKY = new THREE.Color('#020617');
+const COLOR_NIGHT_AMBIENT = new THREE.Color('#0b1329');
+
+const COLOR_RAIN_SKY = new THREE.Color('#475569');
+const COLOR_RAIN_AMBIENT = new THREE.Color('#334155');
+
+const COLOR_STORM_SKY = new THREE.Color('#1e293b');
+const COLOR_STORM_AMBIENT = new THREE.Color('#1e293b');
+
+const COLOR_FOG_SKY = new THREE.Color('#64748b');
+const COLOR_FOG_AMBIENT = new THREE.Color('#475569');
+
+const COLOR_WINTER_SKY = new THREE.Color('#dde8f0');
+const COLOR_WINTER_AMBIENT = new THREE.Color('#c7d9ef');
 
 export default function DayNightCycle() {
   const { scene } = useThree();
   const worldTime = useGameStore((state) => state.worldTime);
   const weather = useGameStore((state) => state.weather);
+  const season = useGameStore((state) => state.season);
 
   const sunLightRef = useRef<THREE.DirectionalLight>(null);
   const moonLightRef = useRef<THREE.DirectionalLight>(null);
+  const ambientLightRef = useRef<THREE.AmbientLight>(null);
+
+  const skyColorRef = useRef(new THREE.Color());
+  const ambientColorRef = useRef(new THREE.Color());
+  const sunColorRef = useRef(new THREE.Color());
+
+  const starsArray = useMemo(() => {
+    const arr = new Float32Array(400 * 3);
+    for (let i = 0; i < 400; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 150;
+      arr[i * 3 + 1] = 45 + Math.random() * 20;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 150;
+    }
+    return arr;
+  }, []);
 
   useFrame(() => {
     // Interpolate sky colors based on worldTime (0 to 24)
-    let skyColor = new THREE.Color('#38bdf8'); // Day blue
-    let ambientColor = new THREE.Color('#e0f2fe');
-    let sunColor = new THREE.Color('#fffbeb');
+    const skyColor = skyColorRef.current;
+    const ambientColor = ambientColorRef.current;
+    const sunColor = sunColorRef.current;
+
+    // Reset to default day colors
+    skyColor.copy(COLOR_DAY_SKY);
+    ambientColor.copy(COLOR_DAY_AMBIENT);
+    sunColor.copy(COLOR_DAY_SUN);
+
     let sunIntensity = 1.2;
     let ambientIntensity = 0.6;
     let moonIntensity = 0.0;
@@ -26,39 +84,39 @@ export default function DayNightCycle() {
     if (hour >= 5.0 && hour < 7.0) {
       // Dawn: transition from night to morning
       const t = (hour - 5.0) / 2.0;
-      skyColor.lerpColors(new THREE.Color('#0f172a'), new THREE.Color('#fdba74'), t); // Dark blue -> Orange dawn
-      ambientColor.lerpColors(new THREE.Color('#020617'), new THREE.Color('#fed7aa'), t);
-      sunColor.set('#fdba74');
+      skyColor.lerpColors(COLOR_DAWN_SKY_START, COLOR_DAWN_SKY_END, t);
+      ambientColor.lerpColors(COLOR_DAWN_AMBIENT_START, COLOR_DAWN_AMBIENT_END, t);
+      sunColor.copy(COLOR_DAWN_SKY_END);
       sunIntensity = THREE.MathUtils.lerp(0.0, 0.8, t);
       ambientIntensity = THREE.MathUtils.lerp(0.1, 0.4, t);
     } else if (hour >= 7.0 && hour < 17.0) {
       // Daytime
       const t = hour >= 12.0 ? (17.0 - hour) / 5.0 : (hour - 7.0) / 5.0; // peak at noon
-      skyColor.set('#38bdf8'); // sky blue
-      ambientColor.set('#f0f9ff');
-      sunColor.set('#fffbeb');
+      skyColor.copy(COLOR_DAY_SKY);
+      ambientColor.copy(COLOR_DAY_AMBIENT);
+      sunColor.copy(COLOR_DAY_SUN);
       sunIntensity = 1.0 + t * 0.4;
       ambientIntensity = 0.5 + t * 0.2;
     } else if (hour >= 17.0 && hour < 19.5) {
       // Sunset
       const t = (hour - 17.0) / 2.5;
-      skyColor.lerpColors(new THREE.Color('#38bdf8'), new THREE.Color('#c084fc'), t); // Blue -> Purple/Orange
-      ambientColor.lerpColors(new THREE.Color('#f0f9ff'), new THREE.Color('#f472b6'), t);
-      sunColor.set('#fb923c'); // bright orange sun
+      skyColor.lerpColors(COLOR_SUNSET_SKY_START, COLOR_SUNSET_SKY_END, t);
+      ambientColor.lerpColors(COLOR_SUNSET_AMBIENT_START, COLOR_SUNSET_AMBIENT_END, t);
+      sunColor.copy(COLOR_SUNSET_SUN);
       sunIntensity = THREE.MathUtils.lerp(1.0, 0.2, t);
       ambientIntensity = THREE.MathUtils.lerp(0.5, 0.25, t);
     } else if (hour >= 19.5 && hour < 21.0) {
       // Dusk
       const t = (hour - 19.5) / 1.5;
-      skyColor.lerpColors(new THREE.Color('#c084fc'), new THREE.Color('#0f172a'), t); // Purple -> Dark
-      ambientColor.lerpColors(new THREE.Color('#f472b6'), new THREE.Color('#090d16'), t);
+      skyColor.lerpColors(COLOR_DUSK_SKY_START, COLOR_DUSK_SKY_END, t);
+      ambientColor.lerpColors(COLOR_DUSK_AMBIENT_START, COLOR_DUSK_AMBIENT_END, t);
       sunIntensity = 0;
       moonIntensity = THREE.MathUtils.lerp(0, 0.3, t);
       ambientIntensity = THREE.MathUtils.lerp(0.25, 0.08, t);
     } else {
       // Nighttime (21.0 to 5.0)
-      skyColor.set('#020617'); // Pitch black-blue
-      ambientColor.set('#0b1329');
+      skyColor.copy(COLOR_NIGHT_SKY);
+      ambientColor.copy(COLOR_NIGHT_AMBIENT);
       moonIntensity = 0.35;
       ambientIntensity = 0.08;
     }
@@ -68,22 +126,29 @@ export default function DayNightCycle() {
       sunIntensity *= 0.4;
       moonIntensity *= 0.3;
       ambientIntensity *= 0.6;
-      skyColor.lerp(new THREE.Color('#475569'), 0.5); // Greyish sky
-      ambientColor.lerp(new THREE.Color('#334155'), 0.5);
+      skyColor.lerp(COLOR_RAIN_SKY, 0.5);
+      ambientColor.lerp(COLOR_RAIN_AMBIENT, 0.5);
     } else if (weather === 'storm') {
       sunIntensity *= 0.2;
       moonIntensity *= 0.1;
       ambientIntensity *= 0.4;
-      skyColor.lerp(new THREE.Color('#1e293b'), 0.75); // Dark grey storm sky
-      ambientColor.lerp(new THREE.Color('#1e293b'), 0.7);
+      skyColor.lerp(COLOR_STORM_SKY, 0.75);
+      ambientColor.lerp(COLOR_STORM_AMBIENT, 0.7);
     } else if (weather === 'fog') {
       sunIntensity *= 0.5;
-      ambientIntensity *= 0.9; // fog scatters ambient light
-      skyColor.lerp(new THREE.Color('#64748b'), 0.6); // Muted fog grey
-      ambientColor.lerp(new THREE.Color('#475569'), 0.5);
+      ambientIntensity *= 0.9;
+      skyColor.lerp(COLOR_FOG_SKY, 0.6);
+      ambientColor.lerp(COLOR_FOG_AMBIENT, 0.5);
     }
 
     // Update scene background color & Fog color
+    // Winter tint: pale grey-white sky, cold ambient
+    if (season === 'winter') {
+      skyColor.lerp(COLOR_WINTER_SKY, 0.38);
+      ambientColor.lerp(COLOR_WINTER_AMBIENT, 0.4);
+      ambientIntensity = Math.max(ambientIntensity, 0.12);
+    }
+
     scene.background = skyColor;
     if (scene.fog) {
       scene.fog.color.copy(skyColor);
@@ -113,16 +178,25 @@ export default function DayNightCycle() {
       );
       moonLightRef.current.intensity = moonIntensity;
     }
+
+    // Update Ambient Light
+    if (ambientLightRef.current) {
+      ambientLightRef.current.color.copy(ambientColor);
+      ambientLightRef.current.intensity = ambientIntensity;
+    }
   });
 
   return (
     <group>
+      {/* Ambient Light */}
+      <ambientLight ref={ambientLightRef} />
+
       {/* Sun Light */}
       <directionalLight
         ref={sunLightRef}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
         shadow-camera-far={120}
         shadow-camera-left={-30}
         shadow-camera-right={30}
@@ -135,33 +209,16 @@ export default function DayNightCycle() {
       <directionalLight
         ref={moonLightRef}
         color="#93c5fd"
-        castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
-        shadow-camera-far={100}
-        shadow-camera-left={-25}
-        shadow-camera-right={25}
-        shadow-camera-top={25}
-        shadow-camera-bottom={-25}
       />
 
       {/* Subtle night stars visual helper (conditionally visible during night in 3D scene) */}
       {worldTime > 19.5 || worldTime < 5.0 ? (
         <points>
           <bufferGeometry>
-            {/* Generate random star coordinates */}
+            {/* Render stars from memoized positions */}
             <bufferAttribute
               attach="attributes-position"
-              args={[
-                new Float32Array(
-                  Array.from({ length: 400 }, () => [
-                    (Math.random() - 0.5) * 150,
-                    45 + Math.random() * 20,
-                    (Math.random() - 0.5) * 150,
-                  ]).flat()
-                ),
-                3,
-              ]}
+              args={[starsArray, 3]}
             />
           </bufferGeometry>
           <pointsMaterial color="#ffffff" size={0.3} sizeAttenuation={true} transparent opacity={0.8} />

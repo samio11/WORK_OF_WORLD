@@ -37,13 +37,13 @@ export default function ZombieAI() {
             {showHealthBar && (
               <group position={[0, heightOffset, 0]}>
                 {/* Red Background */}
-                <mesh>
-                  <planeGeometry args={[barWidth, 0.08]} />
+                <mesh scale={[barWidth, 1, 1]}>
+                  <planeGeometry args={[1, 0.08]} />
                   <meshBasicMaterial color="#ef4444" depthTest={false} />
                 </mesh>
                 {/* Green Current HP */}
-                <mesh position={[-(barWidth * (1 - hpPercent)) / 2, 0, 0.005]}>
-                  <planeGeometry args={[barWidth * hpPercent, 0.08]} />
+                <mesh position={[-(barWidth * (1 - hpPercent)) / 2, 0, 0.005]} scale={[barWidth * hpPercent, 1, 1]}>
+                  <planeGeometry args={[1, 0.08]} />
                   <meshBasicMaterial color="#22c55e" depthTest={false} />
                 </mesh>
               </group>

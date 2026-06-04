@@ -9,7 +9,8 @@ export type ItemType =
   | 'furniture'
   | 'seed'
   | 'ammo'
-  | 'water';
+  | 'water'
+  | 'fish';
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
@@ -32,6 +33,7 @@ export interface Item {
   healthRestore?: number;
   seedType?: CropType;
   buildingType?: BuildingType;
+  sellPrice?: number;
 }
 
 export type ZombieType = 'walker' | 'runner' | 'tank' | 'toxic' | 'boss';
@@ -94,7 +96,7 @@ export interface Crop {
 
 export interface FoliageNode {
   id: string;
-  type: 'tree' | 'rock' | 'bush' | 'mushroom' | 'flower';
+  type: 'tree' | 'rock' | 'bush' | 'mushroom' | 'flower' | 'sakura_tree';
   position: Position;
   scale: number;
   rotation: number;
@@ -163,6 +165,8 @@ export interface Quest {
 
 export type Weather = 'sunny' | 'rain' | 'storm' | 'fog';
 
+export type Season = 'summer' | 'rainy' | 'winter';
+
 export type SkillType = 'farming' | 'fishing' | 'combat' | 'crafting' | 'survival' | 'engineering';
 
 export interface SkillProgress {
@@ -210,11 +214,28 @@ export interface PowerPlantState {
   outputPower: number; // kW
 }
 
+// Rideable Car
+export interface RideableCar {
+  id: string;
+  position: Position;
+  rotation: number;
+  color: string;
+  speed: number; // max speed in units/s
+}
+
+// Rideable Ship
+export interface RideableShip {
+  id: string;
+  position: Position;
+  rotation: number;
+  speed: number; // max speed in units/s
+}
+
 export interface GameState {
   // Game Management
   isGameStarted: boolean;
   isGameOver: boolean;
-  activeTab: 'hud' | 'inventory' | 'crafting' | 'quests' | 'map' | 'menu' | 'trader' | 'gameover';
+  activeTab: 'hud' | 'inventory' | 'crafting' | 'quests' | 'map' | 'menu' | 'trader' | 'market' | 'gameover';
   selectedNpcId: string | null;
 
   // Player Stats and Position
@@ -233,6 +254,8 @@ export interface GameState {
   worldTime: number; // 0.0 to 24.0 (hours)
   weather: Weather;
   weatherTimer: number; // duration of current weather in game ticks
+  season: Season;
+  seasonTimer: number; // ticks until next season
 
   // Grid / Farming / Building Mode
   isBuildingMode: boolean;
@@ -244,12 +267,17 @@ export interface GameState {
   crops: Crop[];
   foliage: FoliageNode[];
   lakeFish: FishNode[];
+  oceanFish: FishNode[];
   bulletTrails: Array<{ id: string; start: Position; end: Position }>;
   animals: Animal[];
   damagePopups: DamagePopup[];
   npcs: NPC[];
   quests: Quest[];
   powerPlant: PowerPlantState;
+  cars: RideableCar[];
+  mountedCarId: string | null;
+  ships: RideableShip[];
+  mountedShipId: string | null;
 
   // Fishing System
   fishing: FishingState;
@@ -306,5 +334,9 @@ export interface GameState {
   spawnLootDrop: (item: Item, position: Position) => void;
   collectLootDrop: (id: string) => void;
   rollPlayer: () => void;
+  mountCar: (carId: string) => void;
+  dismountCar: () => void;
+  mountShip: (shipId: string) => void;
+  dismountShip: () => void;
   tickGame: (delta: number) => void;
 }

@@ -45,6 +45,15 @@ export default function MiniMap() {
     ctx.strokeStyle = '#3b82f6';
     ctx.stroke();
 
+    // 1.5 Draw Ocean (Deep blue rectangle in NW: x < -12, z < -12)
+    const oceanTopLeft = worldToCanvas(-60, -60);
+    const oceanBotRight = worldToCanvas(-12, -12);
+    ctx.fillStyle = '#0a192f'; // Deep blue ocean
+    ctx.fillRect(oceanTopLeft.px, oceanTopLeft.py, oceanBotRight.px - oceanTopLeft.px, oceanBotRight.py - oceanTopLeft.py);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#0284c7';
+    ctx.strokeRect(oceanTopLeft.px, oceanTopLeft.py, oceanBotRight.px - oceanTopLeft.px, oceanBotRight.py - oceanTopLeft.py);
+
     // 2. Draw Mountains (Gray region)
     // Mountains: x > 18, z > 12
     const mTopLeft = worldToCanvas(18, 12);
@@ -67,7 +76,7 @@ export default function MiniMap() {
     ctx.stroke();
     ctx.setLineDash([]); // Reset line dash
 
-    // 4. Draw Power Plant Landmark (Center-East flat zone)
+    // 4. Draw Power Landmark (Center-East flat zone)
     // Power Plant: x: 12, z: -10, radius = 10
     const pp = worldToCanvas(12, -10);
     const ppRad = (10 / 120) * width;
@@ -86,6 +95,7 @@ export default function MiniMap() {
     ctx.fillText('MOUNTAINS', mTopLeft.px + 10, mTopLeft.py + 20);
     ctx.fillText('VILLAGE FLAT', village.px - 34, village.py);
     ctx.fillText('POWER PLANT', pp.px - 34, pp.py);
+    ctx.fillText('NW OCEAN', oceanTopLeft.px + 10, oceanTopLeft.py + 25);
 
     // 5. Draw Placed Buildings (Yellow boxes)
     ctx.fillStyle = '#eab308';

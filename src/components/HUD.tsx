@@ -11,6 +11,7 @@ export default function HUD() {
   const equipItem = useGameStore((state) => state.equipItem);
   const worldTime = useGameStore((state) => state.worldTime);
   const weather = useGameStore((state) => state.weather);
+  const season = useGameStore((state) => state.season);
   
   const isBuildingMode = useGameStore((state) => state.isBuildingMode);
   const selectedBuildingType = useGameStore((state) => state.selectedBuildingType);
@@ -194,6 +195,13 @@ export default function HUD() {
                 </div>
                 <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1 flex gap-2 items-center justify-end">
                   <span>Day 1</span>
+                  <span>•</span>
+                  <span className={`flex items-center gap-0.5 ${
+                    season === 'summer' ? 'text-amber-400' : season === 'rainy' ? 'text-blue-400' : 'text-slate-300'
+                  }`}>
+                    <span>{season === 'summer' ? '☀️' : season === 'rainy' ? '🌧️' : '❄️'}</span>
+                    <span className="capitalize">{season}</span>
+                  </span>
                   <span>•</span>
                   <span className="flex items-center gap-0.5">
                     <span>{weatherIcons[weather]}</span>

@@ -20,15 +20,20 @@ export default function Foliage() {
   const mushroomRef = useRef<THREE.InstancedMesh>(null);
   const flowerRef = useRef<THREE.InstancedMesh>(null);
   const grassRef = useRef<THREE.InstancedMesh>(null);
+  
+  const sakuraTrunkRef = useRef<THREE.InstancedMesh>(null);
+  const sakuraLeavesRef = useRef<THREE.InstancedMesh>(null);
+  const dummyRef = useRef(new THREE.Object3D());
 
   // 1. Separate foliage nodes from global store
-  const { trees, rocks, bushes, mushrooms, flowers } = useMemo(() => {
+  const { trees, rocks, bushes, mushrooms, flowers, sakuraTrees } = useMemo(() => {
     return {
       trees: foliage.filter((f) => f.type === 'tree'),
       rocks: foliage.filter((f) => f.type === 'rock'),
       bushes: foliage.filter((f) => f.type === 'bush'),
       mushrooms: foliage.filter((f) => f.type === 'mushroom'),
       flowers: foliage.filter((f) => f.type === 'flower'),
+      sakuraTrees: foliage.filter((f) => f.type === 'sakura_tree'),
     };
   }, [foliage]);
 
@@ -187,12 +192,35 @@ export default function Foliage() {
       });
       flowerRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [trees, rocks, bushes, mushrooms, flowers]);
+
+    // F. Sakura Trees (Low-Poly style, fluffy pink crown)
+    if (sakuraTrunkRef.current && sakuraLeavesRef.current) {
+      sakuraTrees.forEach((tree, idx) => {
+        const tx = tree.position[0];
+        const ty = tree.position[1];
+        const tz = tree.position[2];
+
+        dummy.position.set(tx, ty + tree.scale * 0.5, tz);
+        dummy.rotation.y = tree.rotation;
+        dummy.scale.set(tree.scale * 0.2, tree.scale * 1.0, tree.scale * 0.2);
+        dummy.updateMatrix();
+        sakuraTrunkRef.current!.setMatrixAt(idx, dummy.matrix);
+
+        dummy.position.set(tx, ty + tree.scale * 1.15, tz);
+        dummy.rotation.y = tree.rotation;
+        dummy.scale.set(tree.scale * 0.95, tree.scale * 0.85, tree.scale * 0.95);
+        dummy.updateMatrix();
+        sakuraLeavesRef.current!.setMatrixAt(idx, dummy.matrix);
+      });
+      sakuraTrunkRef.current.instanceMatrix.needsUpdate = true;
+      sakuraLeavesRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [trees, rocks, bushes, mushrooms, flowers, sakuraTrees]);
 
   // Frame animations: Waving grass tufts & Falling leaves
   useFrame((state, delta) => {
     const time = state.clock.getElapsedTime();
-    const dummy = new THREE.Object3D();
+    const dummy = dummyRef.current;
 
     // 1. Waving grass
     if (grassRef.current) {
@@ -236,7 +264,7 @@ export default function Foliage() {
       {/* Pine Tree Trunks */}
       <instancedMesh
         ref={treeTrunkRef}
-        args={[null as any, null as any, trees.length]}
+        args={[undefined, undefined, trees.length]}
         castShadow
         receiveShadow
       >
@@ -247,7 +275,7 @@ export default function Foliage() {
       {/* Pine Tree Cones - Layer 1 (Bottom) */}
       <instancedMesh
         ref={treeLeaves1Ref}
-        args={[null as any, null as any, trees.length]}
+        args={[undefined, undefined, trees.length]}
         castShadow
         receiveShadow
       >
@@ -258,7 +286,7 @@ export default function Foliage() {
       {/* Pine Tree Cones - Layer 2 (Middle) */}
       <instancedMesh
         ref={treeLeaves2Ref}
-        args={[null as any, null as any, trees.length]}
+        args={[undefined, undefined, trees.length]}
         castShadow
         receiveShadow
       >
@@ -269,7 +297,7 @@ export default function Foliage() {
       {/* Pine Tree Cones - Layer 3 (Top) */}
       <instancedMesh
         ref={treeLeaves3Ref}
-        args={[null as any, null as any, trees.length]}
+        args={[undefined, undefined, trees.length]}
         castShadow
         receiveShadow
       >
@@ -277,10 +305,32 @@ export default function Foliage() {
         <meshStandardMaterial color="#166534" flatShading roughness={0.75} />
       </instancedMesh>
 
+      {/* Sakura Tree Trunks */}
+      <instancedMesh
+        ref={sakuraTrunkRef}
+        args={[undefined, undefined, sakuraTrees.length]}
+        castShadow
+        receiveShadow
+      >
+        <cylinderGeometry args={[0.25, 0.38, 1.2, 5]} />
+        <meshStandardMaterial color="#4a2c11" flatShading roughness={0.92} />
+      </instancedMesh>
+
+      {/* Sakura Tree Leaves (Cherry Blossoms) */}
+      <instancedMesh
+        ref={sakuraLeavesRef}
+        args={[undefined, undefined, sakuraTrees.length]}
+        castShadow
+        receiveShadow
+      >
+        <sphereGeometry args={[0.9, 6, 5]} />
+        <meshStandardMaterial color="#f472b6" flatShading roughness={0.7} />
+      </instancedMesh>
+
       {/* Base Mining Rocks */}
       <instancedMesh
         ref={rockRef}
-        args={[null as any, null as any, rocks.length]}
+        args={[undefined, undefined, rocks.length]}
         castShadow
         receiveShadow
       >
@@ -291,7 +341,7 @@ export default function Foliage() {
       {/* Mossy Caps on Rocks */}
       <instancedMesh
         ref={rockMossRef}
-        args={[null as any, null as any, rocks.length]}
+        args={[undefined, undefined, rocks.length]}
         receiveShadow
       >
         <sphereGeometry args={[0.9, 4, 3]} />
@@ -301,7 +351,7 @@ export default function Foliage() {
       {/* Berry Bushes */}
       <instancedMesh
         ref={bushRef}
-        args={[null as any, null as any, bushes.length]}
+        args={[undefined, undefined, bushes.length]}
         castShadow
         receiveShadow
       >
@@ -312,7 +362,7 @@ export default function Foliage() {
       {/* Colorful Mushrooms */}
       <instancedMesh
         ref={mushroomRef}
-        args={[null as any, null as any, mushrooms.length]}
+        args={[undefined, undefined, mushrooms.length]}
         castShadow
       >
         <coneGeometry args={[0.18, 0.28, 5]} />
@@ -322,7 +372,7 @@ export default function Foliage() {
       {/* Wild Flowers */}
       <instancedMesh
         ref={flowerRef}
-        args={[null as any, null as any, flowers.length]}
+        args={[undefined, undefined, flowers.length]}
       >
         <sphereGeometry args={[0.12, 4, 4]} />
         <meshStandardMaterial color="#fb7185" flatShading roughness={0.8} />
@@ -331,7 +381,7 @@ export default function Foliage() {
       {/* Wind Waving Grass Tufts */}
       <instancedMesh
         ref={grassRef}
-        args={[null as any, null as any, grassClumps.length]}
+        args={[undefined, undefined, grassClumps.length]}
       >
         <coneGeometry args={[0.06, 0.35, 3]} />
         <meshStandardMaterial color="#22c55e" flatShading roughness={0.92} />

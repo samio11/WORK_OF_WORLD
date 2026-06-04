@@ -68,7 +68,7 @@ class AudioSynthManager {
   }
 
   // SOUND EFFECTS GENERATORS
-  public playSfx(type: 'hit' | 'swing' | 'zombie_growl' | 'zombie_hit' | 'coin' | 'craft' | 'fish_bite' | 'level_up' | 'water' | 'build' | 'footstep' | 'power_on' | 'shoot') {
+  public playSfx(type: 'hit' | 'swing' | 'zombie_growl' | 'zombie_hit' | 'coin' | 'craft' | 'fish_bite' | 'level_up' | 'water' | 'build' | 'footstep' | 'power_on' | 'shoot' | 'bird_chirp') {
     this.resume();
     if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') return;
@@ -76,6 +76,32 @@ class AudioSynthManager {
     const now = this.ctx.currentTime;
 
     switch (type) {
+      case 'bird_chirp': {
+        const playChirp = (delay: number) => {
+          const osc = this.ctx!.createOscillator();
+          const gain = this.ctx!.createGain();
+          osc.connect(gain);
+          gain.connect(this.sfxGain!);
+
+          osc.type = 'sine';
+          const startFreq = 2000 + Math.random() * 500;
+          osc.frequency.setValueAtTime(startFreq, now + delay);
+          osc.frequency.exponentialRampToValueAtTime(startFreq + 900, now + delay + 0.05);
+
+          gain.gain.setValueAtTime(0.001, now + delay);
+          gain.gain.linearRampToValueAtTime(0.08, now + delay + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.06);
+
+          osc.start(now + delay);
+          osc.stop(now + delay + 0.07);
+        };
+
+        playChirp(0);
+        if (Math.random() > 0.3) {
+          playChirp(0.12);
+        }
+        break;
+      }
       case 'swing': {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
