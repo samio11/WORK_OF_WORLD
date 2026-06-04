@@ -24,6 +24,7 @@ export default function Foliage() {
   const sakuraTrunkRef = useRef<THREE.InstancedMesh>(null);
   const sakuraLeavesRef = useRef<THREE.InstancedMesh>(null);
   const dummyRef = useRef(new THREE.Object3D());
+  const grassShaderRef = useRef<any>(null);
 
   // 1. Separate foliage nodes from global store
   const { trees, rocks, bushes, mushrooms, flowers, sakuraTrees } = useMemo(() => {
@@ -215,25 +216,27 @@ export default function Foliage() {
       sakuraTrunkRef.current.instanceMatrix.needsUpdate = true;
       sakuraLeavesRef.current.instanceMatrix.needsUpdate = true;
     }
-  }, [trees, rocks, bushes, mushrooms, flowers, sakuraTrees]);
 
-  // Frame animations: Waving grass tufts & Falling leaves
-  useFrame((state, delta) => {
-    const time = state.clock.getElapsedTime();
-    const dummy = dummyRef.current;
-
-    // 1. Waving grass
+    // G. Grass Clumps
     if (grassRef.current) {
       grassClumps.forEach((g, idx) => {
-        // sinusoidal sway offset by index
-        const sway = Math.sin(time * 2.2 + idx * 0.08) * 0.08;
         dummy.position.set(g.x, g.y + 0.1, g.z);
-        dummy.rotation.set(sway, g.rotation + sway * 0.5, sway * 0.8);
+        dummy.rotation.set(0, g.rotation, 0);
         dummy.scale.set(g.scale * 0.55, g.scale * 1.35, g.scale * 0.55);
         dummy.updateMatrix();
         grassRef.current!.setMatrixAt(idx, dummy.matrix);
       });
       grassRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [trees, rocks, bushes, mushrooms, flowers, sakuraTrees, grassClumps]);
+
+  // Frame animations: Waving grass tufts & Falling leaves
+  useFrame((state, delta) => {
+    const time = state.clock.getElapsedTime();
+
+    // 1. Update GPU grass shader uniform
+    if (grassShaderRef.current) {
+      grassShaderRef.current.uniforms.uTime.value = time;
     }
 
     // 2. Falling leaves drift
@@ -384,7 +387,29 @@ export default function Foliage() {
         args={[undefined, undefined, grassClumps.length]}
       >
         <coneGeometry args={[0.06, 0.35, 3]} />
-        <meshStandardMaterial color="#22c55e" flatShading roughness={0.92} />
+        <meshStandardMaterial
+          color="#22c55e"
+          flatShading
+          roughness={0.92}
+          onBeforeCompile={(shader) => {
+            shader.uniforms.uTime = { value: 0 };
+            shader.vertexShader = `
+              uniform float uTime;
+            ` + shader.vertexShader;
+            shader.vertexShader = shader.vertexShader.replace(
+              '#include <begin_vertex>',
+              `
+                #include <begin_vertex>
+                #ifdef USE_INSTANCING
+                  float sway = sin(uTime * 2.5 + instanceMatrix[3][0] * 0.4 + instanceMatrix[3][2] * 0.4) * 0.09;
+                  transformed.x += sway * (position.y + 0.175);
+                  transformed.z += sway * 0.5 * (position.y + 0.175);
+                #endif
+              `
+            );
+            grassShaderRef.current = shader;
+          }}
+        />
       </instancedMesh>
 
       {/* Atmospheric Leaves falling down */}

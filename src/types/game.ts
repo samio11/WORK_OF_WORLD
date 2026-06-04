@@ -338,5 +338,6 @@ export interface GameState {
   dismountCar: () => void;
   mountShip: (shipId: string) => void;
   dismountShip: () => void;
+  recallShip: (shipId: string) => void;
   tickGame: (delta: number) => void;
 }

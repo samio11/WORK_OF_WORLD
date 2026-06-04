@@ -406,18 +406,7 @@ function ShoreBoat() {
 }
 
 // Swimming fish model with wiggling tail
-function SwimmingFish({ fish, idx }: { fish: any; idx: number }) {
-  const tailRef = useRef<THREE.Mesh>(null);
-
-  // Wag tail back and forth based on frame clocks
-  useFrame((state) => {
-    if (tailRef.current) {
-      const time = state.clock.getElapsedTime();
-      // Fast wiggles
-      tailRef.current.rotation.y = Math.sin(time * 16.0 + idx * 0.7) * 0.42;
-    }
-  });
-
+function SwimmingFish({ fish, idx, tailRef }: { fish: any; idx: number; tailRef: (el: THREE.Mesh | null) => void }) {
   return (
     <group position={fish.position} rotation={[0, fish.targetAngle, 0]}>
       {/* Fish Body */}
@@ -588,6 +577,15 @@ function PowerPlant() {
 
 // Wooden Pier/Dock extending into the NW Ocean
 function Pier() {
+  const playerPos = useGameStore((state) => state.playerPos);
+  const ships = useGameStore((state) => state.ships);
+  const mountedShipId = useGameStore((state) => state.mountedShipId);
+
+  const isNearPierEnd = playerPos[0] >= -20.5 && playerPos[0] <= -17.5 && playerPos[2] >= -21.2 && playerPos[2] <= -18.8;
+  const ship = ships[0];
+  const isShipFar = ship ? Math.hypot(ship.position[0] - (-20.5), ship.position[2] - (-20)) > 7.0 : false;
+  const showRecallPrompt = isNearPierEnd && isShipFar && !mountedShipId;
+
   return (
     <group position={[-15, -1.15, -20]}>
       {/* Wooden support posts */}
@@ -628,6 +626,19 @@ function Pier() {
           <meshBasicMaterial color="#fbbf24" />
         </mesh>
         <pointLight position={[0, 1.7, 0]} color="#fbbf24" intensity={2.0} distance={8} />
+
+        {showRecallPrompt && (
+          <group position={[0, 2.4, 0]}>
+            <Html center distanceFactor={11} style={{ pointerEvents: 'none' }}>
+              <div className="bg-slate-950/95 border border-cyan-400/50 backdrop-blur-md rounded-xl px-4 py-2 shadow-2xl text-center select-none whitespace-nowrap">
+                <div className="text-cyan-300 text-[10px] font-bold uppercase tracking-wider">⛵ Ship is out at sea</div>
+                <div className="text-white text-xs font-black mt-0.5">
+                  Press <span className="text-cyan-400 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-500/30">F</span> to Recall Ship
+                </div>
+              </div>
+            </Html>
+          </group>
+        )}
       </group>
     </group>
   );
@@ -666,7 +677,7 @@ function RideableShipMesh({ ship }: { ship: RideableShip }) {
     } else {
       const gameState = useGameStore.getState();
       const dist = Math.hypot(gameState.playerPos[0] - ship.position[0], gameState.playerPos[2] - ship.position[2]);
-      const close = dist < 4.5;
+      const close = dist < 7.0;
       if (close !== isCloseRef.current) {
         isCloseRef.current = close;
         setIsClose(close);
@@ -1216,6 +1227,18 @@ export default function Decorations() {
   const cars = useGameStore((state) => state.cars);
   const ships = useGameStore((state) => state.ships);
 
+  const tailRefs = useRef<Array<THREE.Mesh | null>>([]);
+
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    for (let i = 0; i < tailRefs.current.length; i++) {
+      const tail = tailRefs.current[i];
+      if (tail) {
+        tail.rotation.y = Math.sin(time * 16.0 + i * 0.7) * 0.42;
+      }
+    }
+  });
+
   const cottages = useMemo(() => {
     const coords: Array<{ p: [number, number, number]; r: number }> = [
       { p: [3.5, getTerrainHeight(3.5, 5.5) + 0.1, 5.5], r: 0 },
@@ -1246,10 +1269,24 @@ export default function Decorations() {
       <TraderShop />
       <ShoreBoat />
       {lakeFish.map((fish, idx) => (
-        <SwimmingFish key={fish.id} fish={fish} idx={idx} />
+        <SwimmingFish
+          key={fish.id}
+          fish={fish}
+          idx={idx}
+          tailRef={(el) => {
+            tailRefs.current[idx] = el;
+          }}
+        />
       ))}
       {oceanFish.map((fish, idx) => (
-        <SwimmingFish key={fish.id} fish={fish} idx={idx + 30} />
+        <SwimmingFish
+          key={fish.id}
+          fish={fish}
+          idx={idx + 30}
+          tailRef={(el) => {
+            tailRefs.current[idx + 30] = el;
+          }}
+        />
       ))}
       <PowerPlant />
       <Pier />

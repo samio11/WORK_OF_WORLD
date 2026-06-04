@@ -43,6 +43,7 @@ export default function PlayerController() {
   const mountedShipId = useGameStore((state) => state.mountedShipId);
   const mountShip = useGameStore((state) => state.mountShip);
   const dismountShip = useGameStore((state) => state.dismountShip);
+  const recallShip = useGameStore((state) => state.recallShip);
   const setTab = useGameStore((state) => state.setTab);
 
   const equippedItem = hotbar[equippedIndex] || undefined;
@@ -72,7 +73,7 @@ export default function PlayerController() {
 
       if (key === 'f') {
         const state = useGameStore.getState();
-        const { playerPos, powerPlant, addFuelToPowerPlant, repairPowerPlant, inventory, hotbar, removeItemFromInventory, cars, mountedCarId, mountCar, dismountCar, ships, mountedShipId, mountShip, dismountShip, setTab } = state;
+        const { playerPos, powerPlant, addFuelToPowerPlant, repairPowerPlant, inventory, hotbar, removeItemFromInventory, cars, mountedCarId, mountCar, dismountCar, ships, mountedShipId, mountShip, dismountShip, recallShip, setTab } = state;
 
         // Priority 1: Dismount car if currently driving
         if (mountedCarId) {
@@ -94,10 +95,24 @@ export default function PlayerController() {
         }
 
         // Priority 2.5: Mount a nearby ship
-        const nearbyShip = ships.find((s) => Math.hypot(playerPos[0] - s.position[0], playerPos[2] - s.position[2]) < 4.5);
+        const nearbyShip = ships.find((s) => Math.hypot(playerPos[0] - s.position[0], playerPos[2] - s.position[2]) < 7.0);
         if (nearbyShip && !mountedCarId) {
           mountShip(nearbyShip.id);
           return;
+        }
+
+        // Priority 2.6: Recall ship if player is standing at the pier and the ship is far away
+        const isNearPierEnd = playerPos[0] >= -20.5 && playerPos[0] <= -17.5 && playerPos[2] >= -21.2 && playerPos[2] <= -18.8;
+        if (isNearPierEnd && !mountedCarId && !mountedShipId) {
+          const ship = ships[0]; // We have one ship
+          if (ship) {
+            const shipDistToPier = Math.hypot(ship.position[0] - (-20.5), ship.position[2] - (-20));
+            if (shipDistToPier > 7.0) {
+              recallShip(ship.id);
+              useGameStore.getState().addDamagePopup("Ship Recalled to Dock! ⛵", [-19, getTerrainHeight(-19, -20) + 2.5, -20], "#22d3ee");
+              return;
+            }
+          }
         }
 
         // Priority 3: Open Market if near the Big Market building
@@ -299,15 +314,9 @@ export default function PlayerController() {
     const isOnPier = newX >= -20.5 && newX <= -9.5 && newZ >= -21.2 && newZ <= -18.8;
 
     if (mountedShipId) {
-      // Ship must stay in the ocean quadrant (x < -13 || z < -13)
-      if (newX >= -13 && newZ >= -13) {
-        if (playerPos[0] < -13) newX = -13.1;
-        else if (playerPos[2] < -13) newZ = -13.1;
-        else {
-          newX = -13.1;
-          newZ = -13.1;
-        }
-      }
+      // Ship must stay inside the NW ocean quadrant
+      newX = Math.max(-55, Math.min(-13.0, newX));
+      newZ = Math.max(-55, Math.min(-13.0, newZ));
     } else {
       // If player is on foot, block them from entering the ocean unless they are on the wooden pier
       if (isInOcean && !isOnPier) {

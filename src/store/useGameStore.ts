@@ -2290,4 +2290,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  recallShip: (shipId) => {
+    const state = get();
+    set({
+      ships: state.ships.map((ship) =>
+        ship.id === shipId
+          ? {
+              ...ship,
+              position: [-23.0, -1.2, -20.0] as Position,
+              rotation: Math.PI / 2,
+            }
+          : ship
+      ),
+    });
+  },
+
 }));
