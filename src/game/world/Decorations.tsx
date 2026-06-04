@@ -887,7 +887,7 @@ function Streetlight({ pos }: { pos: [number, number, number] }) {
 function BigMarket() {
   const setTab = useGameStore((state) => state.setTab);
 
-  const marketPos: [number, number, number] = [-20, getTerrainHeight(-20, 5), 5];
+  const marketPos: [number, number, number] = [-6, getTerrainHeight(-6, -12), -12];
   const isCloseRef = useRef(false);
   const [isClose, setIsClose] = React.useState(false);
 

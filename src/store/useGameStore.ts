@@ -314,7 +314,7 @@ const createInitialState = () => {
   hotbar[0] = { id: uuid(), count: 1, ...ITEM_PRESETS.knife } as Item;
   hotbar[1] = { id: uuid(), count: 1, ...ITEM_PRESETS.axe } as Item;
   hotbar[2] = { id: uuid(), count: 1, ...ITEM_PRESETS.pickaxe } as Item;
-  
+
   inventory[0] = { id: uuid(), count: 5, ...ITEM_PRESETS.apple } as Item;
   inventory[1] = { id: uuid(), count: 5, ...ITEM_PRESETS.water_bottle } as Item;
   inventory[2] = { id: uuid(), count: 10, ...ITEM_PRESETS.wheat_seed } as Item;
@@ -348,7 +348,7 @@ const createInitialState = () => {
       id: 'npc_miller',
       type: 'quest_giver',
       name: 'Captain Miller',
-      position: [-5, 0, 10],
+      position: [-4, 0, -5],
       rotation: Math.PI,
       dialogue: [
         'We need to defend this valley. Grab a weapon and help out!',
@@ -430,12 +430,13 @@ const createInitialState = () => {
       { id: 'car_1', position: [2.0, 0.35, 1.5], rotation: 0, color: '#b91c1c', speed: 12 },
       { id: 'car_2', position: [12.0, 0.35, 2.0], rotation: Math.PI / 2, color: '#1d4ed8', speed: 14 },
       { id: 'car_3', position: [15.0, 0.35, -6.0], rotation: Math.PI, color: '#15803d', speed: 11 },
-      { id: 'car_4', position: [-5.0, 0.35, 6.0], rotation: -Math.PI / 2, color: '#eab308', speed: 13 },
+      { id: 'car_4', position: [-5.0, 0.35, -8.0], rotation: -Math.PI / 2, color: '#eab308', speed: 13 },
     ] as RideableCar[],
     mountedCarId: null,
 
+    // NEW — docked right at end of pier:
     ships: [
-      { id: 'ship_1', position: [-23.0, -1.2, -20.0], rotation: Math.PI / 2, speed: 9.0 }
+      { id: 'ship_1', position: [-25.0, -1.2, -20.0], rotation: Math.PI / 2, speed: 9.0 }
     ] as RideableShip[],
     mountedShipId: null as string | null,
 
@@ -489,7 +490,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const knifeItem = { id: uuid(), count: 1, ...ITEM_PRESETS.knife } as Item;
     const axeItem = { id: uuid(), count: 1, ...ITEM_PRESETS.axe } as Item;
     const pickaxeItem = { id: uuid(), count: 1, ...ITEM_PRESETS.pickaxe } as Item;
-    
+
     state.hotbar = Array(6).fill(null);
     state.inventory = Array(24).fill(null);
 
@@ -745,7 +746,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addItemToInventory: (itemToAdd) => {
     const { inventory, hotbar } = get();
-    
+
     // 1. Try to stack in hotbar
     for (let i = 0; i < hotbar.length; i++) {
       const item = hotbar[i];
@@ -754,7 +755,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const updated = [...hotbar];
         updated[i] = { ...item, count: item.count + canTake };
         set({ hotbar: updated });
-        
+
         itemToAdd.count -= canTake;
         if (itemToAdd.count <= 0) return true;
       }
@@ -828,7 +829,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const inventory = [...get().inventory];
 
     let temp: Item | null = null;
-    
+
     // Get item from origin
     if (fromHotbar) {
       temp = hotbar[fromIdx];
@@ -1009,7 +1010,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (item.type === 'weapon' || item.type === 'tool') {
       // Melee Swing
       if (get().attackCooldown > 0) return;
-      
+
       set({ isAttacking: true, attackCooldown: 0.35 });
       GameAudio.playSfx('swing');
 
@@ -1123,7 +1124,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     GameAudio.playSfx('zombie_hit');
-    
+
     // Find zombie in list
     const targetZombie = get().zombies.find((z) => z.id === id);
     if (!targetZombie) return;
@@ -1136,14 +1137,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (targetZombie.health - amount <= 0) {
       // Remove zombie and grant rewards
       set({ zombies: zombies.filter((z) => z.id !== id) });
-      
+
       const xpReward = targetZombie.type === 'boss' ? 200 : (targetZombie.type === 'tank' ? 40 : 15);
       const goldReward = targetZombie.type === 'boss' ? 100 : (targetZombie.type === 'tank' ? 25 : 8);
-      
+
       get().addXp(xpReward);
       get().addGold(goldReward);
       get().addSkillXp('combat', xpReward);
-      
+
       get().progressQuest('kill', targetZombie.type, 1);
 
       // Chance to drop fuel or bullet or canned water
@@ -1248,9 +1249,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   spawnZombieWave: (count) => {
     const { playerPos } = get();
     const newZombies: Zombie[] = [];
-    
+
     const types: ZombieType[] = ['walker', 'runner', 'tank', 'toxic'];
-    
+
     for (let i = 0; i < count; i++) {
       // Spawn in circle outside player camera view (radius 20 to 30)
       const angle = Math.random() * Math.PI * 2;
@@ -1268,7 +1269,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       let hp = 30;
       let speed = 1.0;
       let dmg = 8;
-      
+
       if (rand > 0.9) {
         type = 'tank';
         hp = 100;
@@ -1303,7 +1304,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   placeBuilding: (type, gridPos) => {
     const { buildings, hotbar, equippedIndex } = get();
-    
+
     // Check if slot already taken
     const exists = buildings.some((b) => b.gridPos[0] === gridPos[0] && b.gridPos[1] === gridPos[1]);
     if (exists) return false;
@@ -1375,7 +1376,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   plantCrop: (type, gridPos) => {
     const { crops, hotbar, equippedIndex } = get();
-    
+
     // Check if slot taken
     const exists = crops.some((c) => c.gridPos[0] === gridPos[0] && c.gridPos[1] === gridPos[1]);
     if (exists) return false;
@@ -1439,7 +1440,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       tomato: 'apple',
       carrot: 'apple',
     };
-    
+
     // We can grant wheat or food directly
     const yieldItem = { ...ITEM_PRESETS.apple, name: crop.type.toUpperCase() + ' Harvest', icon: '🌽', count: Math.floor(Math.random() * 2) + 2 } as Item;
     get().addItemToInventory(yieldItem);
@@ -1463,7 +1464,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Grant rewards
     get().addXp(quest.reward.xp);
     get().addGold(quest.reward.gold);
-    
+
     if (quest.reward.items) {
       quest.reward.items.forEach((ri) => {
         const pItem = ITEM_PRESETS[ri.name];
@@ -1564,7 +1565,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const px = playerPos[0];
     const pz = playerPos[2];
     const isNearWater = px > -30 && px < -5 && pz > -10 && pz < 25;
-    
+
     if (!isNearWater) {
       return; // Cannot fish here
     }
@@ -1837,7 +1838,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (isNight) targetTemp -= 4.0;
       if (state.weather === 'rain') targetTemp -= 3.0;
       if (state.weather === 'storm') targetTemp -= 5.0;
-      
+
       const nearPowerSource = state.buildings.some(
         (b) => b.type === 'generator' && b.active && Math.hypot(b.position[0] - state.playerPos[0], b.position[2] - state.playerPos[2]) < 6
       );
@@ -1866,194 +1867,194 @@ export const useGameStore = create<GameState>((set, get) => ({
     // 4. Zombie AI updates (Only pathfind/bite if game started)
     const updatedZombies = state.isGameStarted
       ? state.zombies.map((zombie) => {
-          const dx = state.playerPos[0] - zombie.position[0];
-          const dz = state.playerPos[2] - zombie.position[2];
-          const dist = Math.hypot(dx, dz);
+        const dx = state.playerPos[0] - zombie.position[0];
+        const dz = state.playerPos[2] - zombie.position[2];
+        const dist = Math.hypot(dx, dz);
 
-          let newPos = [...zombie.position] as Position;
-          let newState = zombie.state;
-          let lastAtk = zombie.lastAttackTime || 0;
+        let newPos = [...zombie.position] as Position;
+        let newState = zombie.state;
+        let lastAtk = zombie.lastAttackTime || 0;
 
-          const aggroDist = isNight ? 18 : 12;
+        const aggroDist = isNight ? 18 : 12;
 
-          if (dist < aggroDist) {
-            newState = 'chase';
-            const angle = Math.atan2(dx, dz);
-            if (dist > 1.2) {
-              const moveSpeed = zombie.speed * (isNight ? 1.35 : 1.0);
-              newPos[0] += Math.sin(angle) * moveSpeed * delta;
-              newPos[2] += Math.cos(angle) * moveSpeed * delta;
-            } else {
-              newState = 'attack';
-              if (Date.now() - lastAtk > 1500) {
-                lastAtk = Date.now();
-                get().damagePlayer(zombie.damage);
-              }
-            }
+        if (dist < aggroDist) {
+          newState = 'chase';
+          const angle = Math.atan2(dx, dz);
+          if (dist > 1.2) {
+            const moveSpeed = zombie.speed * (isNight ? 1.35 : 1.0);
+            newPos[0] += Math.sin(angle) * moveSpeed * delta;
+            newPos[2] += Math.cos(angle) * moveSpeed * delta;
           } else {
-            newState = 'idle';
-            if (Math.random() < 0.02) {
-              newPos[0] += (Math.random() - 0.5) * zombie.speed * 2.0;
-              newPos[2] += (Math.random() - 0.5) * zombie.speed * 2.0;
+            newState = 'attack';
+            if (Date.now() - lastAtk > 1500) {
+              lastAtk = Date.now();
+              get().damagePlayer(zombie.damage);
             }
           }
+        } else {
+          newState = 'idle';
+          if (Math.random() < 0.02) {
+            newPos[0] += (Math.random() - 0.5) * zombie.speed * 2.0;
+            newPos[2] += (Math.random() - 0.5) * zombie.speed * 2.0;
+          }
+        }
 
-          state.buildings.forEach((b) => {
-            if (b.type === 'wall' || b.type === 'door') {
-              const bDx = b.position[0] - newPos[0];
-              const bDz = b.position[2] - newPos[2];
-              const bDist = Math.hypot(bDx, bDz);
-              if (bDist < 1.0) {
-                newPos[0] -= Math.sin(Math.atan2(bDx, bDz)) * 0.1;
-                newPos[2] -= Math.cos(Math.atan2(bDx, bDz)) * 0.1;
-                
-                if (Math.random() < 0.08) {
-                  get().damageBuilding(b.id, zombie.damage * 0.2);
-                }
+        state.buildings.forEach((b) => {
+          if (b.type === 'wall' || b.type === 'door') {
+            const bDx = b.position[0] - newPos[0];
+            const bDz = b.position[2] - newPos[2];
+            const bDist = Math.hypot(bDx, bDz);
+            if (bDist < 1.0) {
+              newPos[0] -= Math.sin(Math.atan2(bDx, bDz)) * 0.1;
+              newPos[2] -= Math.cos(Math.atan2(bDx, bDz)) * 0.1;
+
+              if (Math.random() < 0.08) {
+                get().damageBuilding(b.id, zombie.damage * 0.2);
               }
             }
-          });
+          }
+        });
 
-          return {
-            ...zombie,
-            position: newPos,
-            state: newState,
-            lastAttackTime: lastAtk,
-          };
-        })
+        return {
+          ...zombie,
+          position: newPos,
+          state: newState,
+          lastAttackTime: lastAtk,
+        };
+      })
       : state.zombies;
 
     // 4.5 Forest Animal AI updates (wander/flee/predator-chase)
     const updatedAnimals = state.isGameStarted
       ? state.animals.map((animal) => {
-          const dx = state.playerPos[0] - animal.position[0];
-          const dz = state.playerPos[2] - animal.position[2];
-          const dist = Math.hypot(dx, dz);
+        const dx = state.playerPos[0] - animal.position[0];
+        const dz = state.playerPos[2] - animal.position[2];
+        const dist = Math.hypot(dx, dz);
 
-          let newPos = [...animal.position] as Position;
-          let newState = animal.state;
-          let newRot = animal.rotation;
-          let newTarget = animal.targetPos;
-          let lastAtk = animal.lastAttackTime || 0;
+        let newPos = [...animal.position] as Position;
+        let newState = animal.state;
+        let newRot = animal.rotation;
+        let newTarget = animal.targetPos;
+        let lastAtk = animal.lastAttackTime || 0;
 
-          // Forest/Mountains boundaries on land
-          const minX = 15;
-          const maxX = 45;
-          const minZ = 12;
-          const maxZ = 45;
+        // Forest/Mountains boundaries on land
+        const minX = 15;
+        const maxX = 45;
+        const minZ = 12;
+        const maxZ = 45;
 
-          if (animal.type === 'wolf') {
-            // Predator behavior
-            if (dist < 10.0) {
-              newState = 'chase';
-            } else if (newState === 'chase' && dist > 16.0) {
-              newState = 'wander';
-              newTarget = undefined;
-            }
+        if (animal.type === 'wolf') {
+          // Predator behavior
+          if (dist < 10.0) {
+            newState = 'chase';
+          } else if (newState === 'chase' && dist > 16.0) {
+            newState = 'wander';
+            newTarget = undefined;
+          }
 
-            if (newState === 'chase') {
-              // Move toward player
-              const angle = Math.atan2(dx, dz);
-              newRot = angle;
-              const moveSpeed = animal.speed * 1.2;
-              
-              if (dist > 1.1) {
-                newPos[0] += Math.sin(angle) * moveSpeed * delta;
-                newPos[2] += Math.cos(angle) * moveSpeed * delta;
-              } else {
-                // Attack player
-                if (Date.now() - lastAtk > 1500) {
-                  lastAtk = Date.now();
-                  get().damagePlayer(6); // Wolf deals 6 damage
-                }
-              }
+          if (newState === 'chase') {
+            // Move toward player
+            const angle = Math.atan2(dx, dz);
+            newRot = angle;
+            const moveSpeed = animal.speed * 1.2;
+
+            if (dist > 1.1) {
+              newPos[0] += Math.sin(angle) * moveSpeed * delta;
+              newPos[2] += Math.cos(angle) * moveSpeed * delta;
             } else {
-              // Wander
-              if (!newTarget || Math.random() < 0.015) {
-                // Pick new target within forest limits
-                newTarget = [
-                  minX + 5 + Math.random() * (maxX - minX - 10),
-                  0,
-                  minZ + 5 + Math.random() * (maxZ - minZ - 10),
-                ] as Position;
-              }
-
-              const tax = newTarget[0] - newPos[0];
-              const taz = newTarget[2] - newPos[2];
-              const tdist = Math.hypot(tax, taz);
-
-              if (tdist > 0.5) {
-                const angle = Math.atan2(tax, taz);
-                newRot = angle;
-                const moveSpeed = animal.speed * 0.4;
-                newPos[0] += Math.sin(angle) * moveSpeed * delta;
-                newPos[2] += Math.cos(angle) * moveSpeed * delta;
-              } else {
-                newTarget = undefined;
+              // Attack player
+              if (Date.now() - lastAtk > 1500) {
+                lastAtk = Date.now();
+                get().damagePlayer(6); // Wolf deals 6 damage
               }
             }
           } else {
-            // Deer / Rabbit behavior
-            if (dist < 6.5) {
-              newState = 'flee';
-            } else if (newState === 'flee' && dist > 12.0) {
-              newState = 'wander';
+            // Wander
+            if (!newTarget || Math.random() < 0.015) {
+              // Pick new target within forest limits
+              newTarget = [
+                minX + 5 + Math.random() * (maxX - minX - 10),
+                0,
+                minZ + 5 + Math.random() * (maxZ - minZ - 10),
+              ] as Position;
+            }
+
+            const tax = newTarget[0] - newPos[0];
+            const taz = newTarget[2] - newPos[2];
+            const tdist = Math.hypot(tax, taz);
+
+            if (tdist > 0.5) {
+              const angle = Math.atan2(tax, taz);
+              newRot = angle;
+              const moveSpeed = animal.speed * 0.4;
+              newPos[0] += Math.sin(angle) * moveSpeed * delta;
+              newPos[2] += Math.cos(angle) * moveSpeed * delta;
+            } else {
               newTarget = undefined;
             }
-
-            if (newState === 'flee') {
-              // Run away from player
-              const fdx = animal.position[0] - state.playerPos[0];
-              const fdz = animal.position[2] - state.playerPos[2];
-              const fangle = Math.atan2(fdx, fdz);
-              newRot = fangle;
-              const moveSpeed = animal.speed * 1.3;
-
-              newPos[0] += Math.sin(fangle) * moveSpeed * delta;
-              newPos[2] += Math.cos(fangle) * moveSpeed * delta;
-            } else {
-              // Wander
-              if (!newTarget || Math.random() < 0.015) {
-                newTarget = [
-                  minX + 5 + Math.random() * (maxX - minX - 10),
-                  0,
-                  minZ + 5 + Math.random() * (maxZ - minZ - 10),
-                ] as Position;
-              }
-
-              const tax = newTarget[0] - newPos[0];
-              const taz = newTarget[2] - newPos[2];
-              const tdist = Math.hypot(tax, taz);
-
-              if (tdist > 0.5) {
-                const angle = Math.atan2(tax, taz);
-                newRot = angle;
-                const moveSpeed = animal.speed * 0.35;
-                newPos[0] += Math.sin(angle) * moveSpeed * delta;
-                newPos[2] += Math.cos(angle) * moveSpeed * delta;
-              } else {
-                newTarget = undefined;
-              }
-            }
+          }
+        } else {
+          // Deer / Rabbit behavior
+          if (dist < 6.5) {
+            newState = 'flee';
+          } else if (newState === 'flee' && dist > 12.0) {
+            newState = 'wander';
+            newTarget = undefined;
           }
 
-          // Clamp new position to forest boundaries
-          newPos[0] = Math.max(minX, Math.min(maxX, newPos[0]));
-          newPos[2] = Math.max(minZ, Math.min(maxZ, newPos[2]));
+          if (newState === 'flee') {
+            // Run away from player
+            const fdx = animal.position[0] - state.playerPos[0];
+            const fdz = animal.position[2] - state.playerPos[2];
+            const fangle = Math.atan2(fdx, fdz);
+            newRot = fangle;
+            const moveSpeed = animal.speed * 1.3;
 
-          // Adjust terrain height
-          const heightOffset = animal.type === 'rabbit' ? 0.15 : (animal.type === 'wolf' ? 0.42 : 0.4);
-          newPos[1] = getTerrainHeight(newPos[0], newPos[2]) + heightOffset;
+            newPos[0] += Math.sin(fangle) * moveSpeed * delta;
+            newPos[2] += Math.cos(fangle) * moveSpeed * delta;
+          } else {
+            // Wander
+            if (!newTarget || Math.random() < 0.015) {
+              newTarget = [
+                minX + 5 + Math.random() * (maxX - minX - 10),
+                0,
+                minZ + 5 + Math.random() * (maxZ - minZ - 10),
+              ] as Position;
+            }
 
-          return {
-            ...animal,
-            position: newPos,
-            state: newState,
-            rotation: newRot,
-            targetPos: newTarget,
-            lastAttackTime: lastAtk,
-          };
-        })
+            const tax = newTarget[0] - newPos[0];
+            const taz = newTarget[2] - newPos[2];
+            const tdist = Math.hypot(tax, taz);
+
+            if (tdist > 0.5) {
+              const angle = Math.atan2(tax, taz);
+              newRot = angle;
+              const moveSpeed = animal.speed * 0.35;
+              newPos[0] += Math.sin(angle) * moveSpeed * delta;
+              newPos[2] += Math.cos(angle) * moveSpeed * delta;
+            } else {
+              newTarget = undefined;
+            }
+          }
+        }
+
+        // Clamp new position to forest boundaries
+        newPos[0] = Math.max(minX, Math.min(maxX, newPos[0]));
+        newPos[2] = Math.max(minZ, Math.min(maxZ, newPos[2]));
+
+        // Adjust terrain height
+        const heightOffset = animal.type === 'rabbit' ? 0.15 : (animal.type === 'wolf' ? 0.42 : 0.4);
+        newPos[1] = getTerrainHeight(newPos[0], newPos[2]) + heightOffset;
+
+        return {
+          ...animal,
+          position: newPos,
+          state: newState,
+          rotation: newRot,
+          targetPos: newTarget,
+          lastAttackTime: lastAtk,
+        };
+      })
       : state.animals;
 
     // 5. Farming crop updates
@@ -2103,7 +2104,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         // Locate closest zombie
         let closestZombie: Zombie | null = null;
         let minDist = 15; // Range of turret
-        
+
         state.zombies.forEach((z) => {
           const zD = Math.hypot(z.position[0] - b.position[0], z.position[2] - b.position[2]);
           if (zD < minDist) {
@@ -2244,10 +2245,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         cars: state.cars.map((car) =>
           car.id === carId
             ? {
-                ...car,
-                position: [playerPos[0], playerPos[1] - 0.3, playerPos[2]] as Position,
-                rotation: playerRot,
-              }
+              ...car,
+              position: [playerPos[0], playerPos[1] - 0.3, playerPos[2]] as Position,
+              rotation: playerRot,
+            }
             : car
         ),
       });
@@ -2260,6 +2261,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ mountedShipId: shipId });
   },
 
+  // NEW — dismount places player at pier tip, ship stays where it was:
   dismountShip: () => {
     const state = get();
     if (state.mountedShipId) {
@@ -2267,21 +2269,26 @@ export const useGameStore = create<GameState>((set, get) => ({
       const playerPos = state.playerPos;
       const playerRot = state.playerRot;
 
-      // Dismount safely to the pier end
-      const disX = -19.0;
+      // Always put player back on the pier walkway so they don't fall into ocean
+      const disX = -18.5;
       const disZ = -20.0;
       const disY = getTerrainHeight(disX, disZ) + 0.35;
 
       set({
         mountedShipId: null,
         playerPos: [disX, disY, disZ] as Position,
+        // Save ship at its current ocean position with player's last rotation
         ships: state.ships.map((ship) =>
           ship.id === shipId
             ? {
-                ...ship,
-                position: [playerPos[0], -1.2, playerPos[2]] as Position,
-                rotation: playerRot,
-              }
+              ...ship,
+              position: [
+                Math.max(-58, Math.min(-14.5, playerPos[0])),
+                -1.2,
+                Math.max(-58, Math.min(-14.5, playerPos[2])),
+              ] as Position,
+              rotation: playerRot,
+            }
             : ship
         ),
       });
@@ -2290,16 +2297,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
 
+  // NEW:
   recallShip: (shipId) => {
     const state = get();
     set({
       ships: state.ships.map((ship) =>
         ship.id === shipId
           ? {
-              ...ship,
-              position: [-23.0, -1.2, -20.0] as Position,
-              rotation: Math.PI / 2,
-            }
+            ...ship,
+            position: [-25.0, -1.2, -20.0] as Position,
+            rotation: Math.PI / 2,
+          }
           : ship
       ),
     });

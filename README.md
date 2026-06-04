@@ -1,46 +1,61 @@
-# 🌲 Outlast RPG: Open World Survival RPG 🧟
+# 🌍 Work Of World (WOW): 3D Open World Survival Simulator ⛵
 
-Welcome to **Outlast RPG**, an immersive, low-poly isometric 3D survival role-playing game built for the web. Explore a beautiful but zombie-infested valley, build a fortified shelter, generate electricity, farm crops, fish in lakes, shop at Trader Greg's counter, and fight off hordes of undead.
+Welcome to **Work Of World (WOW)**, an immersive, low-poly isometric 3D survival role-playing game built for the web. Explore a beautiful procedurally-detailed valley, sail across a deep blue ocean, build a fortified home base, automate a power grid, farm crops, fish in lakes, trade at the Big Market, and survive the infected waves.
 
-Outlast RPG combines the visual charm of *Animal Crossing* and *Stardew Valley* with the tense survival loops of *Project Zomboid* and *State of Decay*.
+Work Of World combines the styling and visual charm of *Animal Crossing* and *Stardew Valley* with the tense survival loops of *Project Zomboid* and *State of Decay*, rendering a full 3D interactive world directly in your browser.
 
 ---
 
 ## 🎮 Core Gameplay Loop
 
 1. **Choose Your Class**: Wake up as a **Soldier** (combat focused with a pistol), a **Farmer** (agricultural specialist), or an **Angler** (master of the lake).
-2. **Scavenge & Harvest**: Fell pine trees for wood, mine mountain rocks for iron and copper, and forage forest apples/mushrooms.
-3. **Build a Homestead**: Construct barricades, doors, and storage boxes. Restore electricity using generators to power lights, irrigation pumps, and automated defense turrets.
-4. **Grow & Fish**: Plow tilled soil patches to grow crops (wheat, corn, potato, tomato, carrot). Cast your rod to catch fish in the central lake.
-5. **Trade & Quest**: Claim rewards from Captain Miller and purchase supplies inside Trader Greg's walk-in Market building.
-6. **Survive the Night**: Keep your hunger, thirst, and body temperature in check. Face aggressive zombies that spawn in greater numbers when the sun goes down.
+2. **Scavenge & Harvest**: Fell pine trees for wood, mine mountain rocks for iron/copper, and forage wild forest apples and mushrooms.
+3. **Build a Homestead**: Construct tilled soil, wooden walls, doors, and storage boxes. Sleep in beds to set your spawn point and skip the night.
+4. **Automate & Power**: Supply fuel to generators to power electric lights, crop irrigation pumps, and automated defense turrets.
+5. **Grow & Fish**: Grow wheat, corn, potatoes, tomatoes, and carrots. Cast your rod to catch fish in the central lake.
+6. **Explore the NW Ocean**: Walk down the wooden pier, board the massive **Exploration Ship**, and sail across deep blue waters.
+7. **Quest & Trade**: Purchase goods and ammo from Trader Greg at the counter inside the dry-land **Big Market**, and accept military assignments from Captain Miller.
+8. **Survive the Undead**: Keep hunger, thirst, and body temperature in check. Barricade your doors to hold off aggressive zombie waves at night.
 
 ---
 
-## ✨ Features
+## ✨ Features & Game Systems
 
-### ⚔️ Combat & RPG Mechanics
-* **Dynamic Classes**: Soldier, Farmer, and Angler starting kits and starting level perks.
-* **3D Gunplay**: Shoot the **Abandoned Pistol** using real-time cone raycasting, drawing glowing yellow bullet tracers.
-* **RPG Damage Popups**: Floating damage numbers projected onto screen space (Yellow for body hits, Red/CRIT for headshots, Orange for forest animals).
-* **Skills Progression**: Level up your *Combat, Farming, Fishing, Crafting, Survival,* and *Engineering* skills through gameplay actions.
+### ⛵ Ocean Exploration & Pier
+* **Explore the NW Ocean**: Sail the deep blue ocean quadrant, featuring blowing wind effects and swimming tropical fish.
+* **Massive Sailing Ship**: Board the exploration ship featuring a wooden hull, crossbar masts, blowing canvas sails, side railings, lanterns, and a gold steering wheel.
+* **Interactive Dock & Recall**: Teleport safely back onto the wooden pier when dismounting. If your ship is parked out at sea, stand at the lantern post and press `F` to recall it instantly to the dock.
 
-### 🏡 Base Building & Grid Placement
-* **Grid-Snapping Construction**: Place tilled soil, wooden walls, and doors that zombies will attack.
-* **Electrical Power Grid**: Supply fuel canisters to generators to power nearby electric lights, irrigation pumps, and automatic defense turrets.
-* **Sleeping Spots**: Place cozy beds to set your spawn point and skip the night (restoring energy).
+### ⚔️ Combat & RPG Systems
+* **Class Kits**: Soldier (Pistol + 50x ammo + Knife), Farmer (Water Pump + seeds), and Angler (120g Gold + grilled fish).
+* **3D Gunplay**: Fire the Abandoned Pistol with real-time cone raycasting and glowing yellow bullet tracers.
+* **RPG Damage Popups**: Dynamic floating numbers projected into screen space (Yellow for body hits, Red/CRIT for headshots, Orange for forest animals).
+* **Skill Trees**: Level up *Combat, Farming, Fishing, Crafting, Survival,* and *Engineering* skills through gameplay actions.
+
+### 🏡 Base Building & Power Grid
+* **Grid-Snapping Building**: Position barricades, doors, storage chests, and cozy beds.
+* **Active Power Grid**: Fuel generators to generate electricity, lighting up streetlights and powering turrets/irrigation pumps.
+* **Turret Defense**: Build automated turrets that target and eliminate nearby zombies using electrical power.
 
 ### 🦌 Living Wildlife & AI Ecosystem
-* **Forest Animals**: Deer, Rabbits, and Wolves roam the wild zones (X: -35 to -15, Z: -35 to -15).
-  * **Deer & Rabbits**: Wander the trees and flee rapidly in the opposite direction if you approach them.
-  * **Wolves**: Aggressive predators that stalk and hunt you if you enter their territory, dealing damage on touch.
-* **Swimming Lake Fish**: Animated Koi fish with real-time tail-wiggling geometry swimming in circular patterns in the lake.
-* **Fishing Mini-Game**: Cast your fishing line near the beach. Once a fish bites, reel it in by playing a timing mini-game to catch Golden Bass, Carp, or Kraken Minnows.
+* **Forest Animals**: Deer, Rabbits, and Wolves roam the wild mountain zones.
+  * **Deer & Rabbits**: Wander the hills and flee rapidly if you approach them.
+  * **Wolves**: Aggressive predators that chase and attack you if you enter their territory.
+* **Fishing Mini-Game**: Cast your line in the central lake, wait for a bite, and play the bar-matching mini-game to catch Golden Bass, Carp, or Kraken Minnows.
 
-### 🗺️ World, Weather, & Pathfinding
-* **Camera-Relative Controls**: Smooth WASD movement mapped to screen-space directions (W is up-screen, S is down-screen, etc.) with radial sliding collision physics.
-* **Walk-in Market Building**: Enter a custom brick-and-mortar storefront to standing face-to-face with Trader Greg. Bounding box physics enforce wall boundaries while leaving the doorway open.
-* **Weather Cycles & Ambient Sounds**: Dynamic weather changes (sunny, rain, fog, and storm) affect your body temperature. Day/night transitions fade sky color and shift BGM soundtracks (Day, Night, Storm, and Combat themes).
+### 🗺️ World, Weather, & UI
+* **Weather & Temperature**: Sunny, rain, fog, and storm cycles that directly impact player body temperature.
+* **Day/Night Cycle**: Fades sky colors dynamically and shifts BGM soundtracks based on time (Day, Night, Storm, and Combat themes).
+* **Flat Market Plateau**: Visit the Big Market structure relocated to dry land at `[-6.0, -12.0]`, sitting on a stone concrete foundation with complete wall bounding box collision physics.
+* **Visual Minimap**: Toggle a topographic map showing the `NW OCEAN`, lake, mountains, village, and current player position.
+
+---
+
+## ⚙️ Performance Optimizations (60 FPS)
+
+* **GPU-Accelerated Grass Waving**: 220 grass clumps are animated 100% on the GPU using a custom vertex shader modifier inside `onBeforeCompile`, replacing slow per-frame CPU matrix translations.
+* **Unified Fish-Tail Render Loop**: Consolidated 24 individual `useFrame` subscriptions inside fish components into a single parent frame loop, reducing React Three Fiber engine overhead by 95%.
+* **Garbage-Collection Free Physics**: Pre-allocated static 3D vectors and mathematical planes inside frame loops to eliminate memory allocation stutters.
 
 ---
 
@@ -54,22 +69,22 @@ Outlast RPG combines the visual charm of *Animal Crossing* and *Stardew Valley* 
 | **`Spacebar`** | Combat Dodge Roll |
 | **`Shift` (Hold)** | Sprint (Consumes Energy) |
 | **`1` - `6`** | Equip Hotbar Item |
+| **`F`** | Interact (Mount/Dismount Ship/Car, Talk, Shop, Recall Ship) |
 | **`TAB` / `E`** | Open / Close Backpack Inventory |
 | **`C`** | Toggle Crafting Panel |
-| **`Q`** | Toggle Quest log |
+| **`Q`** | Toggle Quest Log |
 | **`M`** | Toggle Map / Minimap |
 | **`B`** | Toggle Grid Building Mode (Wall, Door, Turret, etc.) |
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## 🛠️ Technology Stack
 
-This application is built entirely as a standalone client-side React app inside Next.js with **zero external model/texture assets** for optimal load times:
-* **Core**: Next.js 15+ (App Router, Static Export), TypeScript.
-* **Rendering**: Three.js, React Three Fiber (R3F) for WebGL canvas mounting.
-* **UI/HUD**: Tailwind CSS, Framer Motion (animated overlays), `@react-three/drei` (CSS screen projection).
-* **State Management**: Zustand (single-source global store managing player position, entity vectors, time, inventories, and triggers).
-* **Audio**: HTML5 Web Audio API procedurally synthesized Sound Effects (synthesizing sine, sawtooth, and noise sweeps) and situational BGMs.
+* **Rendering Engine**: Three.js & React Three Fiber (R3F) for WebGL canvas mounting.
+* **Frontend Framework**: Next.js (App Router, Static Export), TypeScript.
+* **Animations & Styling**: Tailwind CSS, Framer Motion (HUD panels), `@react-three/drei` (HTML elements projection).
+* **State Management**: Zustand (single-source global store managing player position, entity vectors, inventories, time, and triggers).
+* **Audio Engine**: HTML5 Web Audio API procedurally synthesizing sound effects (sine/saw/noise oscillators) and situational background scores.
 
 ---
 
@@ -80,7 +95,8 @@ This application is built entirely as a standalone client-side React app inside 
 * npm, yarn, or pnpm
 
 ### ⚙️ Installation
-1. Clone the repository or navigate to the project directory:
+
+1. Navigate to the project directory:
    ```bash
    cd "Work Of World"
    ```
@@ -94,7 +110,7 @@ This application is built entirely as a standalone client-side React app inside 
    ```bash
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser to play!
+   Open [http://localhost:3000](http://localhost:3000) in your browser to start playing!
 
 4. Build for Production:
    ```bash

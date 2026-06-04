@@ -50,6 +50,13 @@ export function getTerrainHeight(x: number, z: number): number {
     return THREE.MathUtils.lerp(height, 0.5, factor);
   }
 
+  // Big Market flat region (around x: -6, z: -12)
+  const mDist = Math.hypot(x - (-6), z - (-12));
+  if (mDist < 7) {
+    const factor = Math.max(0, 1 - mDist / 7);
+    return THREE.MathUtils.lerp(height, 0.2, factor);
+  }
+
   // Village flat region (around x: 5, z: 8)
   const vDist = Math.hypot(x - 5, z - 8);
   if (vDist < 12) {
@@ -105,6 +112,10 @@ export default function WorldTerrain() {
         // Tiled village cobblestones
         const tile = (Math.floor(vx * 1.6) + Math.floor(vz * 1.6)) % 2 === 0;
         color.set(tile ? '#94a3b8' : '#78716c');
+      } else if (Math.hypot(vx - (-6), vz - (-12)) < 5.5 && vy > -0.5) {
+        // Big Market concrete slab
+        const tile = (Math.floor(vx) + Math.floor(vz)) % 2 === 0;
+        color.set(tile ? '#475569' : '#334155');
       } else if (ppDist < 7.5 && vy > -0.5) {
         // Dark concrete industrial pad
         const tile = (Math.floor(vx) + Math.floor(vz)) % 2 === 0;

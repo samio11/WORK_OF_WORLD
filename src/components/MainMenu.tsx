@@ -161,12 +161,9 @@ export default function MainMenu() {
               {isGameOver ? (
                 <span className="text-red-500 bg-clip-text">You Died</span>
               ) : (
-                <>
-                  <span className="bg-gradient-to-r from-emerald-400 via-amber-300 to-red-400 bg-clip-text text-transparent">
-                    Outlast
-                  </span>{' '}
-                  <span className="text-slate-400">RPG</span>
-                </>
+                <span className="bg-gradient-to-r from-emerald-400 via-amber-300 to-red-400 bg-clip-text text-transparent">
+                  Work Of World
+                </span>
               )}
             </h1>
             <p className="text-slate-400 text-xs tracking-wide mb-8">

@@ -63,7 +63,7 @@ export default function PlayerController() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeTab !== 'hud') return; // Ignore keys when overlays are active
-      
+
       const key = e.key.toLowerCase();
       if (key === 'w' || key === 'arrowup') keys.current.w = true;
       if (key === 'a' || key === 'arrowleft') keys.current.a = true;
@@ -95,7 +95,8 @@ export default function PlayerController() {
         }
 
         // Priority 2.5: Mount a nearby ship
-        const nearbyShip = ships.find((s) => Math.hypot(playerPos[0] - s.position[0], playerPos[2] - s.position[2]) < 7.0);
+        // NEW — slightly larger range so it's easier to board from the pier:
+        const nearbyShip = ships.find((s) => Math.hypot(playerPos[0] - s.position[0], playerPos[2] - s.position[2]) < 8.0);
         if (nearbyShip && !mountedCarId) {
           mountShip(nearbyShip.id);
           return;
@@ -116,7 +117,7 @@ export default function PlayerController() {
         }
 
         // Priority 3: Open Market if near the Big Market building
-        const marketDist = Math.hypot(playerPos[0] - (-20), playerPos[2] - 5);
+        const marketDist = Math.hypot(playerPos[0] - (-6), playerPos[2] - (-12));
         if (marketDist < 6.0) {
           setTab('market');
           return;
@@ -236,7 +237,7 @@ export default function PlayerController() {
 
     // Movement speed values
     let currentSpeed = 5.2; // Default walk speed
-    
+
     // Car/Ship driving
     if (mountedCarId) {
       const car = cars.find((c) => c.id === mountedCarId);
@@ -292,14 +293,14 @@ export default function PlayerController() {
     // 1. Lake Boundary Check: lake center [-18, 8], radius 16.0 (only if not on ship)
     if (!mountedShipId) {
       const lakeDist = Math.hypot(newX - (-18), newZ - 8);
-      
+
       // Deep Water Block (lDist < 16m)
       if (lakeDist < 16.0) {
         const pushX = (newX - (-18)) / lakeDist;
         const pushZ = (newZ - 8) / lakeDist;
         newX = -18 + pushX * 16.0;
         newZ = 8 + pushZ * 16.0;
-      } 
+      }
       // Beach / Shore Mud slowdown (lDist 16.0 to 18.2m)
       else if (lakeDist >= 16.0 && lakeDist < 18.2) {
         currentSpeed *= 0.45;
@@ -312,19 +313,17 @@ export default function PlayerController() {
     // 1.5. Ocean & Pier Boundaries
     const isInOcean = newX < -12 && newZ < -12;
     const isOnPier = newX >= -20.5 && newX <= -9.5 && newZ >= -21.2 && newZ <= -18.8;
-
+    // NEW:
     if (mountedShipId) {
-      // Ship must stay inside the NW ocean quadrant
-      newX = Math.max(-55, Math.min(-13.0, newX));
-      newZ = Math.max(-55, Math.min(-13.0, newZ));
+      // Ship roams freely in NW ocean quadrant — generous bounds so exploration feels open
+      newX = Math.max(-58, Math.min(-14.0, newX));
+      newZ = Math.max(-58, Math.min(-14.0, newZ));
     } else {
-      // If player is on foot, block them from entering the ocean unless they are on the wooden pier
+      // On foot: block ocean entry unless on pier
       if (isInOcean && !isOnPier) {
         if (newX < -12) newX = -12;
         if (newZ < -12) newZ = -12;
       }
-      
-      // If they are on the pier, restrict them within the platform boundaries so they don't fall off
       if (isOnPier) {
         if (newX < -20.0) newX = -20.0;
         if (newZ < -21.0) newZ = -21.0;
@@ -411,6 +410,9 @@ export default function PlayerController() {
       // Market counter inside
       checkAABBCollision(8.0, 3.1, 2.2, 0.5);
 
+      // Big Market collision box
+      checkAABBCollision(-6.0, -12.0, 9.0, 6.0);
+
       // 2.7 Animals Collision Check
       animals.forEach((animal) => {
         const dx = newX - animal.position[0];
@@ -435,7 +437,7 @@ export default function PlayerController() {
 
         const dx = newX - f.position[0];
         const dz = newZ - f.position[2];
-        
+
         // Fast AABB/distance squared cull: skip anything further than 3 units
         if (dx * dx + dz * dz > 9.0) return;
 
@@ -461,8 +463,8 @@ export default function PlayerController() {
     newZ = Math.max(-55, Math.min(55, newZ));
 
     // Align height to terrain mesh or sea level if on ship
-    const newY = mountedShipId ? -1.2 + 0.35 : getTerrainHeight(newX, newZ) + 0.35; // Character feet offset
-
+    // NEW — fixed sea level when on ship, no terrain lookup:
+    const newY = mountedShipId ? -0.85 : getTerrainHeight(newX, newZ) + 0.35;
     // Update position in Zustand
     updatePlayerPosition(
       [newX, newY, newZ],
@@ -472,7 +474,7 @@ export default function PlayerController() {
     // 4. Camera Follow: Smoothly position camera relative to player position
     // Isometric offset: camera sits back, up, and right
     const targetCamPos = targetCamPosRef.current.set(newX, newY, newZ).add(CAM_OFFSET);
-    
+
     camera.position.lerp(targetCamPos, delta * 4.5); // Smooth lerp camera
     camera.lookAt(newX, newY, newZ);
   });

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Outlast RPG - 3D Open World Survival Game",
+  title: "Work Of World - 3D Open World Survival Game",
   description: "Explore, gather resources, fight zombies, farm crops, build structures, and generate electricity in this beautiful low-poly isometric 3D survival game.",
 };
 
